@@ -76,6 +76,9 @@ static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockad
 
 static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockaddr_t *ah_addr)
 {
+	if (!os_addr || !ah_addr) {
+		return;
+	}
 	switch (os_addr->sa_family) {
 	case AF_INET: {
 		const struct sockaddr_in *v4 = (const struct sockaddr_in *)os_addr;

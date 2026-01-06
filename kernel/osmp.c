@@ -289,7 +289,7 @@ static int os_init_sigp_pipe (struct mp_queue *q)
 	if (err < 0)
 		goto __sigp_fini;
 
-	err = os_deactivate_sigp (q);
+	err = os_activate_sigp (q);
 	if (err < 0) {
 		goto __sigp_fini;
 	}
