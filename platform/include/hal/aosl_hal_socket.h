@@ -36,7 +36,7 @@ enum aosl_socket_proto {
   AOSL_IPPROTO_UDP = 2,
 };
 
-// can convert to struct sockaddr_in and struct sockaddr_in6
+// socket address
 typedef struct aosl_sockaddr {
   uint16_t sa_family;  // aosl_socket_domain
   uint16_t sa_port;
