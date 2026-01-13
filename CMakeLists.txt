@@ -51,7 +51,9 @@ endif()
 # If declared as a standalone project, define project information
 if(AOSL_DECLARE_PROJECT)
     # Set toolchain file
-    include(${AOSL_DIR}/cmake/toolchain_template.cmake)
+    if(NOT CMAKE_TOOLCHAIN_FILE)
+        include(${AOSL_DIR}/cmake/toolchain_template.cmake)
+    endif()
 
     project(aosl
             VERSION 1.0.0
