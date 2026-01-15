@@ -153,6 +153,18 @@ int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t *addr)
 	return 0;
 }
 
+int aosl_hal_sk_bind_device(int sockfd, const char *if_name)
+{
+	struct ifreq ifr;
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name) - 1);
+	int ret = lwip_setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr));
+	if (ret < 0) {
+		return aosl_hal_errno_convert(errno);
+	}
+	return 0;
+}
+
 int aosl_hal_sk_listen(int sockfd, int backlog)
 {
 	int ret = lwip_listen(sockfd, backlog);
