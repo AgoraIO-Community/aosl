@@ -431,7 +431,7 @@ __export_in_so__ int aosl_mpq_add_fd (aosl_fd_t fd, size_t max_pkt_size, aosl_fd
 		return -1;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	va_start (args, argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
@@ -474,7 +474,7 @@ __export_in_so__ int aosl_mpq_add_fd_on_q (aosl_mpq_t qid, aosl_fd_t fd, size_t 
 	if (q == NULL)
 		return_err (-AOSL_EINVAL);
 
-	argv = alloca (sizeof (uintptr_t) * (8 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (8 + argc));
 	argv [0] = (uintptr_t)&err;
 	argv [1] = (uintptr_t)fd;
 	argv [2] = (uintptr_t)max_pkt_size;

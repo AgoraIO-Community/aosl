@@ -311,7 +311,7 @@ void rb_tls_fini()
 {
 	aosl_rb_clear(&thread_tree, struct tls_thread_node, rb_node, tls_thread_node_destory);
 
-	aosl_free(tls_key_id_bits);
+	bitmap_destroy(tls_key_id_bits);
 	aosl_free(tls_slot_table);
 	tls_key_id_bits = NULL;
 	tls_slot_table = NULL;

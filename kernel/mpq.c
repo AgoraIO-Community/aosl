@@ -1321,7 +1321,7 @@ static int __add_func_args (struct mp_queue *q, int sync, aosl_mpq_t done_qid, a
 	if (argc > 0) {
 		uintptr_t l;
 
-		argv = alloca (sizeof (uintptr_t) * argc);
+		argv = aosl_alloca (sizeof (uintptr_t) * argc);
 		for (l = 0; l < argc; l++)
 			argv [l] = va_arg (args, uintptr_t);
 	}

@@ -68,7 +68,7 @@ int os_mp_wait_poll (struct mp_queue *q, aosl_poll_event_t *events, int maxevent
 
 	fds_count = q->iofd_count;
 	fds_count++;
-	fds = (aosl_poll_event_t *)alloca (sizeof (aosl_poll_event_t) * fds_count);
+	fds = (aosl_poll_event_t *)aosl_alloca (sizeof (aosl_poll_event_t) * fds_count);
 
 	if (timeo > 0)
 		time_stamp = aosl_tick_now ();

@@ -108,7 +108,7 @@ static void __queue_resolve_async_reply (aosl_mpq_t q, aosl_ref_t ref,
 	 * the 2nd arg is the resolved address count;
 	 * the 3rd arg is addrs memory;
 	 **/
-	this_argv = alloca (sizeof (uintptr_t) * (3 + argc));
+	this_argv = aosl_alloca (sizeof (uintptr_t) * (3 + argc));
 	this_argv [0] = (uintptr_t)str_addr; /* the resolving addr name */
 	this_argv [1] = resolved_count; /* the resolved address count */
 	this_argv [2] = (uintptr_t)addrs; /* the address memory passed by requester */
@@ -174,7 +174,7 @@ static int __prot_resolve_host_async_args (const char *hostname, unsigned short 
 		return -1;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * (9 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (9 + argc));
 	argv [0] = (uintptr_t)hostname;
 	argv [1] = port;
 	argv [2] = sk_type;

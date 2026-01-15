@@ -16,6 +16,6 @@
 #include <malloc.h>
 #endif
 
-#define aosl_alloca  alloca
+#define aosl_alloca(size)  alloca((size))
 
 #endif /* __AOSL_ALLOCA_H__ */

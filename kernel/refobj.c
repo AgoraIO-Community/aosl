@@ -726,7 +726,7 @@ static int __ref_op_args (aosl_ref_t ref, enum refobj_op_type op, aosl_ref_func_
 	if (argc > 0) {
 		uintptr_t l;
 
-		argv = alloca (sizeof (uintptr_t) * argc);
+		argv = aosl_alloca (sizeof (uintptr_t) * argc);
 		for (l = 0; l < argc; l++)
 			argv [l] = va_arg (args, uintptr_t);
 	}
@@ -744,7 +744,7 @@ static int __refobj_op_args (struct refobj *robj, enum refobj_op_type op, aosl_r
 	if (argc > 0) {
 		uintptr_t l;
 
-		argv = alloca (sizeof (uintptr_t) * argc);
+		argv = aosl_alloca (sizeof (uintptr_t) * argc);
 		for (l = 0; l < argc; l++)
 			argv [l] = va_arg (args, uintptr_t);
 	}

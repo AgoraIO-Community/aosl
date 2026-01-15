@@ -590,7 +590,7 @@ __export_in_so__ aosl_timer_t aosl_mpq_create_timer (uintptr_t interval, aosl_ti
 		return AOSL_MPQ_TIMER_INVALID;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	va_start (args, argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
@@ -639,7 +639,7 @@ static aosl_timer_t mpq_create_timer_on_q_args (aosl_mpq_t qid, uintptr_t interv
 		return AOSL_MPQ_TIMER_INVALID;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * (4 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (4 + argc));
 	argv [0] = (uintptr_t)&timer;
 	argv [1] = (uintptr_t)interval;
 	argv [2] = (uintptr_t)func;
@@ -699,7 +699,7 @@ __export_in_so__ aosl_timer_t aosl_mpq_create_oneshot_timer (aosl_timer_func_t f
 		return AOSL_MPQ_TIMER_INVALID;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	va_start (args, argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
@@ -765,7 +765,7 @@ __export_in_so__ aosl_timer_t aosl_mpq_set_timer (uintptr_t interval, aosl_timer
 		return AOSL_MPQ_TIMER_INVALID;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	va_start (args, argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
@@ -815,7 +815,7 @@ static aosl_timer_t mpq_set_timer_on_q_args (aosl_mpq_t qid, uintptr_t interval,
 		return AOSL_MPQ_TIMER_INVALID;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * (5 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (5 + argc));
 	argv [0] = (uintptr_t)&timer;
 	argv [1] = (uintptr_t)interval;
 	argv [2] = (uintptr_t)expire_time_p;
@@ -881,7 +881,7 @@ __export_in_so__ aosl_timer_t aosl_mpq_set_oneshot_timer (aosl_ts_t expire_time,
 		return AOSL_MPQ_TIMER_INVALID;
 	}
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	va_start (args, argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);

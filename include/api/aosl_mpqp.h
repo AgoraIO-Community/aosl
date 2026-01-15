@@ -178,12 +178,13 @@ extern __aosl_api__ int aosl_mpqp_pool_tail_queue_argv (aosl_mpqp_t qp, aosl_mpq
  * Shrink a multiplex queue pool object by 1.
  * Parameter:
  *        qp: the queue pool object to be shrinked
+ *      wait: whether to wait for the q exit
  * Return value:
  *        <0: the pool size is only one now, no permission to shrink any more
  *            if want shrink to zero size, please use aosl_mpqp_shrink_all;
  *         0: shrinked 1 q successfully;
  **/
-extern __aosl_api__ int aosl_mpqp_shrink (aosl_mpqp_t qp);
+extern __aosl_api__ int aosl_mpqp_shrink (aosl_mpqp_t qp, int wait);
 
 /**
  * Shrink all MPQs in a multiplex queue pool object.

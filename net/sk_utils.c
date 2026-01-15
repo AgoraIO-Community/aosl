@@ -265,7 +265,7 @@ static int __mpq_connect_args (aosl_fd_t fd, const aosl_sockaddr_t *dest_addr, i
 	if (q == NULL)
 		return -AOSL_EINVAL;
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
 
@@ -319,7 +319,7 @@ static int __mpq_connect_on_q_args (aosl_mpq_t qid, aosl_fd_t fd, const aosl_soc
 	if (q == NULL)
 		return -AOSL_EINVAL;
 
-	argv = alloca (sizeof (uintptr_t) * (9 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (9 + argc));
 	argv [0] = (uintptr_t)&err;
 	argv [1] = (uintptr_t)fd;
 	argv [2] = (uintptr_t)dest_addr;
@@ -380,7 +380,7 @@ static int __mpq_listen_args (aosl_fd_t fd, int backlog, aosl_sk_accepted_t acce
 	if (q == NULL)
 		return -AOSL_EINVAL;
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
 
@@ -429,7 +429,7 @@ __export_in_so__ int aosl_mpq_listen_on_q (aosl_mpq_t qid, aosl_fd_t fd, int bac
 	if (q == NULL)
 		return_err (-AOSL_EINVAL);
 
-	argv = alloca (sizeof (uintptr_t) * (5 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (5 + argc));
 	argv [0] = (uintptr_t)&err;
 	argv [1] = (uintptr_t)fd;
 	argv [2] = (uintptr_t)backlog;
@@ -468,7 +468,7 @@ static int __mpq_add_dgram_sk_args (aosl_fd_t fd, size_t max_pkt_size, aosl_dgra
 	if (q == NULL)
 		return -AOSL_EINVAL;
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
 
@@ -517,7 +517,7 @@ __export_in_so__ int aosl_mpq_add_dgram_socket_on_q (aosl_mpq_t qid, aosl_fd_t f
 	if (q == NULL)
 		return_err (-AOSL_EINVAL);
 
-	argv = alloca (sizeof (uintptr_t) * (5 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (5 + argc));
 	argv [0] = (uintptr_t)&err;
 	argv [1] = (uintptr_t)fd;
 	argv [2] = (uintptr_t)max_pkt_size;
@@ -558,7 +558,7 @@ static int __mpq_add_stream_sk_args (aosl_fd_t fd, size_t max_pkt_size, aosl_che
 	if (q == NULL)
 		return -AOSL_EINVAL;
 
-	argv = alloca (sizeof (uintptr_t) * argc);
+	argv = aosl_alloca (sizeof (uintptr_t) * argc);
 	for (l = 0; l < argc; l++)
 		argv [l] = va_arg (args, uintptr_t);
 
@@ -610,7 +610,7 @@ __export_in_so__ int aosl_mpq_add_stream_socket_on_q (aosl_mpq_t qid, aosl_fd_t 
 	if (q == NULL)
 		return_err (-AOSL_EINVAL);
 
-	argv = alloca (sizeof (uintptr_t) * (6 + argc));
+	argv = aosl_alloca (sizeof (uintptr_t) * (6 + argc));
 	argv [0] = (uintptr_t)&err;
 	argv [1] = (uintptr_t)fd;
 	argv [2] = (uintptr_t)max_pkt_size;
