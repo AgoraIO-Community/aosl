@@ -16,26 +16,13 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <string.h>
-#if defined (__linux__) || defined (__MACH__) || defined (__LITEOS__) || defined (_WIN32) || defined (__FREERTOS__)
-#include <sys/types.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-#if !defined (__linux__) && !defined (__MACH__) && !defined(__ALIOSTHINGS__)
-/**
- * Worry about some guy would like to define a macro
- * for this type, so confirm that it is not a macro.
- **/
-#ifndef __ssize_t_defined
-typedef intptr_t ssize_t;
-#define __ssize_t_defined
-#endif
-#endif
-
+typedef intptr_t isize_t;
+typedef uintptr_t usize_t;
 
 /* The proto for a general aosl object destructor function. */
 typedef void (*aosl_obj_dtor_t) (uintptr_t argc, uintptr_t argv []);

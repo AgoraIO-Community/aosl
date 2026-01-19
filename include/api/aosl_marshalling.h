@@ -114,8 +114,8 @@ typedef struct _____type_info {
 
 
 extern __aosl_api__ void aosl_init_typed_obj (const aosl_type_info_t *type, void *typed_obj_p);
-extern __aosl_api__ ssize_t aosl_marshal (const aosl_type_info_t *type, const void *typed_obj_p, aosl_psb_t *psb);
-extern __aosl_api__ ssize_t aosl_unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const aosl_psb_t *psb);
+extern __aosl_api__ isize_t aosl_marshal (const aosl_type_info_t *type, const void *typed_obj_p, aosl_psb_t *psb);
+extern __aosl_api__ isize_t aosl_unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const aosl_psb_t *psb);
 extern __aosl_api__ void aosl_fini_typed_obj (const aosl_type_info_t *type, const void *typed_obj_p);
 
 

@@ -19,7 +19,7 @@
 #include <kernel/fileobj.h>
 
 typedef void (*iofd_data_t) (void *data, size_t len, uintptr_t argc, uintptr_t argv [], const void *extra);
-typedef ssize_t (*iofd_post_process_t) (void *data, size_t len, uintptr_t argc, uintptr_t argv []);
+typedef isize_t (*iofd_post_process_t) (void *data, size_t len, uintptr_t argc, uintptr_t argv []);
 
 #define FD_MAX_PACKET_SIZE_MIN 1024 /* 1KB is small enough for one packet */
 #define FD_MAX_PACKET_SIZE_MAX (4 << 20) /* 4MB is big enough for one packet */
@@ -173,11 +173,11 @@ static __always_inline int __iofd_better_move_buffer (struct iofd *f)
 		return 1;
 
 	/* the left space is smaller than a max packet, and the left data len is small enough */
-	if ((char *)f->r_data - (char *)f->r_head > (ssize_t)f->max_pkt_size && (char *)f->r_tail - (char *)f->r_data < MIN_SYSCALL_SIZE)
+	if ((char *)f->r_data - (char *)f->r_head > (isize_t)f->max_pkt_size && (char *)f->r_tail - (char *)f->r_data < MIN_SYSCALL_SIZE)
 		return 1;
 
 	/* the received data is small enough for a moving */
-	if ((char *)f->r_tail - (char *)f->r_data <= MAX_LW_COPY_SIZE && (char *)f->r_data - (char *)f->r_head >= (ssize_t)(f->max_pkt_size / 2))
+	if ((char *)f->r_tail - (char *)f->r_data <= MAX_LW_COPY_SIZE && (char *)f->r_data - (char *)f->r_head >= (isize_t)(f->max_pkt_size / 2))
 		return 1;
 
 	return 0;

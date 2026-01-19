@@ -109,7 +109,7 @@ struct sendto_args {
 	aosl_sk_addr_t addr;
 };
 
-static ssize_t __default_accept (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
+static isize_t __default_accept (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
 {
 	aosl_accept_data_t *accept_data = (aosl_accept_data_t *)buf;
 
@@ -127,10 +127,10 @@ static ssize_t __default_accept (aosl_fd_t fd, void *buf, size_t len, size_t ext
 	return sizeof (aosl_accept_data_t);
 }
 
-static ssize_t __default_recv (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
+static isize_t __default_recv (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
 {
 	int flags = MSG_DONTWAIT;
-	ssize_t err;
+	isize_t err;
 
 	UNUSED (extra);
 	UNUSED (argc);
@@ -144,10 +144,10 @@ static ssize_t __default_recv (aosl_fd_t fd, void *buf, size_t len, size_t extra
 	return err;
 }
 
-static ssize_t __default_send (aosl_fd_t fd, const void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
+static isize_t __default_send (aosl_fd_t fd, const void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
 {
 	int flags = MSG_DONTWAIT;
-	ssize_t err;
+	isize_t err;
 
 	UNUSED (argc);
 	UNUSED (argv);
@@ -163,9 +163,9 @@ static ssize_t __default_send (aosl_fd_t fd, const void *buf, size_t len, size_t
 	return err;
 }
 
-static ssize_t __default_recvfrom (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
+static isize_t __default_recvfrom (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
 {
-	ssize_t err;
+	isize_t err;
 
 	UNUSED (argc);
 	UNUSED (argv);
@@ -185,11 +185,11 @@ static ssize_t __default_recvfrom (aosl_fd_t fd, void *buf, size_t len, size_t e
 	return err;
 }
 
-static ssize_t __default_sendto (aosl_fd_t fd, const void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
+static isize_t __default_sendto (aosl_fd_t fd, const void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
 {
 	int flags = MSG_DONTWAIT;
 	void *extra_data = AOSL_P_ALIGN_PTR ((char *)buf + len);
-	ssize_t err;
+	isize_t err;
 
 	UNUSED (argc);
 	UNUSED (argv);
@@ -630,11 +630,11 @@ __export_in_so__ int aosl_mpq_add_stream_socket_on_q (aosl_mpq_t qid, aosl_fd_t 
 	return_err (err);
 }
 
-static ssize_t ____send (struct iofd *f, const void *buf, size_t len, int flags)
+static isize_t ____send (struct iofd *f, const void *buf, size_t len, int flags)
 {
 	w_buffer_t *node;
 	int *flags_p;
-	ssize_t err;
+	isize_t err;
 
 	if (len > FD_MAX_WBUF_SIZE)
 		return -AOSL_EMSGSIZE;
@@ -676,7 +676,7 @@ __queue_it:
 
 static void ____target_q_send (const aosl_ts_t *queued_ts_p, aosl_refobj_t robj, uintptr_t argc, uintptr_t argv [])
 {
-	ssize_t *err_p = (ssize_t *)argv [0];
+	isize_t *err_p = (isize_t *)argv [0];
 	struct iofd *f = (struct iofd *)argv [1];
 	const void *buf = (const void *)argv [2];
 	size_t len = (size_t)argv [3];
@@ -689,10 +689,10 @@ static void ____target_q_send (const aosl_ts_t *queued_ts_p, aosl_refobj_t robj,
 	*err_p = ____send (f, buf, len, flags);
 }
 
-__export_in_so__ ssize_t aosl_send (aosl_fd_t fd, const void *buf, size_t len, int flags)
+__export_in_so__ isize_t aosl_send (aosl_fd_t fd, const void *buf, size_t len, int flags)
 {
 	struct iofd *f;
-	ssize_t err = -AOSL_EINVAL;
+	isize_t err = -AOSL_EINVAL;
 
 	f = iofd_get (fd);
 	/**
@@ -721,12 +721,12 @@ __export_in_so__ ssize_t aosl_send (aosl_fd_t fd, const void *buf, size_t len, i
 	return_err (err);
 }
 
-static ssize_t ____sendto (struct iofd *f, const void *buf, size_t len, int flags,
+static isize_t ____sendto (struct iofd *f, const void *buf, size_t len, int flags,
 							const aosl_sockaddr_t *dest_addr)
 {
 	w_buffer_t *node;
 	struct sendto_args *args;
-	ssize_t err;
+	isize_t err;
 
 	if (len > FD_MAX_WBUF_SIZE)
 		return -AOSL_EMSGSIZE;
@@ -767,7 +767,7 @@ __queue_it:
 
 static void ____target_q_sendto (const aosl_ts_t *queued_ts_p, aosl_refobj_t robj, uintptr_t argc, uintptr_t argv [])
 {
-	ssize_t *err_p = (ssize_t *)argv [0];
+	isize_t *err_p = (isize_t *)argv [0];
 	struct iofd *f = (struct iofd *)argv [1];
 	const void *buf = (const void *)argv [2];
 	size_t len = (size_t)argv [3];
@@ -781,10 +781,10 @@ static void ____target_q_sendto (const aosl_ts_t *queued_ts_p, aosl_refobj_t rob
 	*err_p = ____sendto (f, buf, len, flags, dest_addr);
 }
 
-__export_in_so__ ssize_t aosl_sendto (aosl_fd_t fd, const void *buf, size_t len, int flags, const aosl_sockaddr_t *dest_addr)
+__export_in_so__ isize_t aosl_sendto (aosl_fd_t fd, const void *buf, size_t len, int flags, const aosl_sockaddr_t *dest_addr)
 {
 	struct iofd *f;
-	ssize_t err = -AOSL_EINVAL;
+	isize_t err = -AOSL_EINVAL;
 
 	f = iofd_get (fd);
 	/**
@@ -1058,7 +1058,7 @@ __export_in_so__ int aosl_ipv6_sk_addr_to_ipv4 (aosl_sockaddr_t *sk_addr_v4, con
 #endif
 }
 
-__export_in_so__ ssize_t aosl_ip_sk_sendto (const aosl_ip_sk_t *sk, const void *buf, size_t len, int flags, const aosl_sockaddr_t *dest_addr)
+__export_in_so__ isize_t aosl_ip_sk_sendto (const aosl_ip_sk_t *sk, const void *buf, size_t len, int flags, const aosl_sockaddr_t *dest_addr)
 {
 	aosl_fd_t fd;
 #ifdef CONFIG_AOSL_IPV6

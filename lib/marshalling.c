@@ -314,9 +314,9 @@ __einval:
 	return -AOSL_EINVAL;
 }
 
-static ssize_t _____marshal (const aosl_type_info_t *type, const void *typed_obj_p, aosl_psb_t **psb_p)
+static isize_t _____marshal (const aosl_type_info_t *type, const void *typed_obj_p, aosl_psb_t **psb_p)
 {
-	ssize_t ret = 0;
+	isize_t ret = 0;
 	uint16_t val, i;
 	const void *this_obj_addr = NULL;
 	uint8_t bool_val;
@@ -587,12 +587,12 @@ __err:
  * So, please pass the address of any data's corresponding variable as 'typed_obj_p' arg
  * to this function instead of their simple value!
  */
-static ssize_t smart_marshal (const aosl_type_info_t *obj_type, const void *obj_addr, aosl_psb_t *psb)
+static isize_t smart_marshal (const aosl_type_info_t *obj_type, const void *obj_addr, aosl_psb_t *psb)
 {
 	return _____marshal (obj_type, obj_addr, &psb);
 }
 
-static __inline__ ssize_t SAFE_STRSIZE (const aosl_psb_t *psb)
+static __inline__ isize_t SAFE_STRSIZE (const aosl_psb_t *psb)
 {
 	size_t __l = 0;
 	size_t __i = 0;
@@ -616,12 +616,12 @@ static __inline__ ssize_t SAFE_STRSIZE (const aosl_psb_t *psb)
 	}
 
 	__l++; /* index ==> len(including the terminating '\0') */
-	return (ssize_t)__l;
+	return (isize_t)__l;
 }
 
-ssize_t _____unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const aosl_psb_t **psb_p)
+isize_t _____unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const aosl_psb_t **psb_p)
 {
-	ssize_t ret = 0;
+	isize_t ret = 0;
 	uint16_t val, i;
 	uint8_t bool_val;
 	void *pointer_val;
@@ -975,7 +975,7 @@ __err:
 	return ret;
 }
 
-static ssize_t smart_unmarshal (const aosl_type_info_t *obj_type, void *obj_addr, const aosl_psb_t *psb)
+static isize_t smart_unmarshal (const aosl_type_info_t *obj_type, void *obj_addr, const aosl_psb_t *psb)
 {
 	return _____unmarshal (obj_type, obj_addr, &psb);
 }
@@ -1166,17 +1166,17 @@ static void smart_fini_typed_obj (const aosl_type_info_t *type, const void *type
 	}
 }
 
-__export_in_so__ ssize_t aosl_marshal (const aosl_type_info_t *type, const void *typed_obj_p, aosl_psb_t *psb)
+__export_in_so__ isize_t aosl_marshal (const aosl_type_info_t *type, const void *typed_obj_p, aosl_psb_t *psb)
 {
-	ssize_t err;
+	isize_t err;
 
 	err = smart_marshal (type, typed_obj_p, psb);
 	return_err (err);
 }
 
-__export_in_so__ ssize_t aosl_unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const aosl_psb_t *psb)
+__export_in_so__ isize_t aosl_unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const aosl_psb_t *psb)
 {
-	ssize_t err;
+	isize_t err;
 
 	err = smart_unmarshal (type, typed_obj_p, psb);
 	return_err (err);

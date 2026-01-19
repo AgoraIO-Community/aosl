@@ -191,7 +191,7 @@ int aosl_hal_sk_close(int sockfd)
   return close(sockfd);
 }
 
-ssize_t aosl_hal_sk_send(int sockfd, const void* buf, size_t len, int flags)
+isize_t aosl_hal_sk_send(int sockfd, const void* buf, size_t len, int flags)
 {
   int ret = send(sockfd, buf, len, flags);
   if (ret < 0) {
@@ -200,7 +200,7 @@ ssize_t aosl_hal_sk_send(int sockfd, const void* buf, size_t len, int flags)
   return ret;
 }
 
-ssize_t aosl_hal_sk_recv(int sockfd, void* buf, size_t len, int flags)
+isize_t aosl_hal_sk_recv(int sockfd, void* buf, size_t len, int flags)
 {
   int ret = recv(sockfd, buf, len, flags);
   if (ret < 0) {
@@ -209,7 +209,7 @@ ssize_t aosl_hal_sk_recv(int sockfd, void* buf, size_t len, int flags)
   return ret;
 }
 
-ssize_t aosl_hal_sk_sendto(int sockfd, const void *buffer, size_t length,
+int aosl_hal_sk_sendto(int sockfd, const void *buffer, size_t length,
                         int flags, const aosl_sockaddr_t *dest_addr)
 {
 #if LWIP_IPV6
@@ -227,7 +227,7 @@ ssize_t aosl_hal_sk_sendto(int sockfd, const void *buffer, size_t length,
   return ret;
 }
 
-ssize_t aosl_hal_sk_recvfrom(int sockfd, void *buffer, size_t length,
+int aosl_hal_sk_recvfrom(int sockfd, void *buffer, size_t length,
                           int flags, aosl_sockaddr_t *src_addr)
 {
 #if LWIP_IPV6
@@ -246,7 +246,7 @@ ssize_t aosl_hal_sk_recvfrom(int sockfd, void *buffer, size_t length,
   return ret;
 }
 
-ssize_t aosl_hal_sk_read(int sockfd, void *buf, size_t count)
+int aosl_hal_sk_read(int sockfd, void *buf, size_t count)
 {
   int ret = read(sockfd, buf, count);
   if (ret < 0) {
@@ -255,7 +255,7 @@ ssize_t aosl_hal_sk_read(int sockfd, void *buf, size_t count)
   return ret;
 }
 
-ssize_t aosl_hal_sk_write(int sockfd, const void *buf, size_t count)
+int aosl_hal_sk_write(int sockfd, const void *buf, size_t count)
 {
   int ret = write(sockfd, buf, count);
   if (ret < 0) {

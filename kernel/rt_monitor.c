@@ -105,7 +105,7 @@ static int update_ifinfos (struct nlmsghdr *h)
 static int afnetlink_init_netifs ()
 {
 	int sk;
-	ssize_t err;
+	isize_t err;
 	char req [sizeof (struct nlmsghdr) + sizeof (struct rtmsg)];
 	struct nlmsghdr *nlh = (struct nlmsghdr *)req;
 	struct ifinfomsg *ifm = (struct ifinfomsg *)(nlh + 1);
@@ -207,7 +207,7 @@ static int __get_if_wireless(const char *if_name)
 static int __af_get_default_rt (uint16_t af, aosl_rt_t *rt, uint32_t *tb_id_p)
 {
 	int sk;
-	ssize_t err;
+	isize_t err;
 	int def_rt_exist = 0;
 	int def_rt_cnt = 0;
 	char req [sizeof (struct nlmsghdr) + sizeof (struct rtmsg)];

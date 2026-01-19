@@ -288,14 +288,14 @@ void os_drain_sigp (struct mp_queue *q)
 	for (;;) {
 		char buf [1024];
 		int finished = 0;
-		ssize_t err = aosl_hal_sk_read (q->sigp.piper, buf, sizeof buf);
+		isize_t err = aosl_hal_sk_read (q->sigp.piper, buf, sizeof buf);
 		if (err > 0) {
 			atomic_sub ((int)err, &q->kick_q_count);
 		}
 
 		// break when read finished
 		if (q->sigp.type == WAKEUP_TYPE_PIPE) {
-			finished = err < (ssize_t)sizeof(buf);
+			finished = err < (isize_t)sizeof(buf);
 		} else if (q->sigp.type == WAKEUP_TYPE_SOCKET) {
 			finished = err < 1;
 		} else {

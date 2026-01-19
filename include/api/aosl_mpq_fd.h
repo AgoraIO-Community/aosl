@@ -31,8 +31,8 @@ extern "C" {
  * encounter errors, MUST NOT close the io fd in these
  * callback functions.
  **/
-typedef ssize_t (*aosl_fd_read_t) (aosl_fd_t fd, void *buf, size_t len, size_t extra_size, uintptr_t argc, uintptr_t argv []);
-typedef ssize_t (*aosl_fd_write_t) (aosl_fd_t fd, const void *buf, size_t len, size_t extra_size, uintptr_t argc, uintptr_t argv []);
+typedef isize_t (*aosl_fd_read_t) (aosl_fd_t fd, void *buf, size_t len, size_t extra_size, uintptr_t argc, uintptr_t argv []);
+typedef isize_t (*aosl_fd_write_t) (aosl_fd_t fd, const void *buf, size_t len, size_t extra_size, uintptr_t argc, uintptr_t argv []);
 
 #define AOSL_DEFAULT_READ_FN ((aosl_fd_read_t)1)
 #define AOSL_DEFAULT_WRITE_FN ((aosl_fd_write_t)1)
@@ -50,7 +50,7 @@ typedef ssize_t (*aosl_fd_write_t) (aosl_fd_t fd, const void *buf, size_t len, s
  *       0: no error, but the whole packet is not ready so far;
  *      >0: the whole packet length
  **/
-typedef ssize_t (*aosl_check_packet_t) (const void *data, size_t len, uintptr_t argc, uintptr_t argv []);
+typedef isize_t (*aosl_check_packet_t) (const void *data, size_t len, uintptr_t argc, uintptr_t argv []);
 
 /**
  * The iofd received data callback function type
@@ -104,7 +104,7 @@ extern __aosl_api__ int aosl_mpq_add_fd_on_q (aosl_mpq_t qid, aosl_fd_t fd, size
 						aosl_fd_read_t read_f, aosl_fd_write_t write_f, aosl_check_packet_t chk_pkt_f,
 								aosl_fd_data_t data_f, aosl_fd_event_t event_f, uintptr_t argc, ...);
 
-extern __aosl_api__ ssize_t aosl_write (aosl_fd_t fd, const void *buf, size_t len);
+extern __aosl_api__ isize_t aosl_write (aosl_fd_t fd, const void *buf, size_t len);
 
 /**
  * Get the N-th argument of the mpq attached fd.

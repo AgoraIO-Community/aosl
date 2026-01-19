@@ -8,7 +8,7 @@ int aosl_hal_get_uuid (char buf [], int buf_sz)
 {
 	char uuid_buf [256];
 	int fd;
-	ssize_t err;
+	int err;
 	int s, d;
 
 	if (buf_sz < 32 + 1 /* including the last '\0' */) {

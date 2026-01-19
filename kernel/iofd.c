@@ -78,10 +78,10 @@ int __iofd_read_data (struct mp_queue *q, struct iofd *f)
 	void *extra_bytes = (f->r_extra_size > 0) ? (char *)f->r_head + buff_size : NULL;
 
 	for (;;) {
-		ssize_t err;
+		isize_t err;
 
 		for (;;) {
-			ssize_t data_len;
+			isize_t data_len;
 
 			err = (char *)f->r_tail - (char *)f->r_data;
 			if (f->chk_pkt_f != NULL && err > 0) {
@@ -221,7 +221,7 @@ int __iofd_write_data (struct mp_queue *q, struct iofd *f)
 
 	while (f->w_q.head != NULL) {
 		w_buffer_t *node = f->w_q.head;
-		ssize_t err;
+		isize_t err;
 		err = f->write_f (iofd_fobj (f)->fd, node->w_data, (char *)node->w_tail - (char *)node->w_data, node->w_extra_size, f->argc, f->argv);
 		f->flags |= AOSL_POLLOUT;
 		if (err < 0) {
@@ -247,9 +247,9 @@ int __iofd_write_data (struct mp_queue *q, struct iofd *f)
 	return 0;
 }
 
-static ssize_t __default_read (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
+static isize_t __default_read (aosl_fd_t fd, void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
 {
-	ssize_t err;
+	isize_t err;
 	UNUSED (extra);
 	UNUSED (argc);
 	UNUSED (argv);
@@ -261,9 +261,9 @@ static ssize_t __default_read (aosl_fd_t fd, void *buf, size_t len, size_t extra
 	return err;
 }
 
-static ssize_t __default_write (aosl_fd_t fd, const void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
+static isize_t __default_write (aosl_fd_t fd, const void *buf, size_t len, size_t extra, uintptr_t argc, uintptr_t argv [])
 {
-	ssize_t err;
+	isize_t err;
 	UNUSED (extra);
 	UNUSED (argc);
 	UNUSED (argv);
@@ -724,10 +724,10 @@ __export_in_so__ int aosl_mpq_del_fd (aosl_fd_t fd)
 	return_err (__iofd_del (fd));
 }
 
-static ssize_t ____write (struct iofd *f, const void *buf, size_t len)
+static isize_t ____write (struct iofd *f, const void *buf, size_t len)
 {
 	w_buffer_t *node;
-	ssize_t err;
+	isize_t err;
 
 	if (len > FD_MAX_WBUF_SIZE)
 		return -AOSL_EMSGSIZE;
@@ -768,7 +768,7 @@ __queue_it:
 
 static void ____target_q_write (const aosl_ts_t *queued_ts_p, aosl_refobj_t robj, uintptr_t argc, uintptr_t argv [])
 {
-	ssize_t *err_p = (ssize_t *)argv [0];
+	isize_t *err_p = (isize_t *)argv [0];
 	struct iofd *f = (struct iofd *)argv [1];
 	const void *buf = (const void *)argv [2];
 	size_t len = (size_t)argv [3];
@@ -780,10 +780,10 @@ static void ____target_q_write (const aosl_ts_t *queued_ts_p, aosl_refobj_t robj
 	*err_p = ____write (f, buf, len);
 }
 
-__export_in_so__ ssize_t aosl_write (aosl_fd_t fd, const void *buf, size_t len)
+__export_in_so__ isize_t aosl_write (aosl_fd_t fd, const void *buf, size_t len)
 {
 	struct iofd *f;
-	ssize_t err = -AOSL_EINVAL;
+	isize_t err = -AOSL_EINVAL;
 
 	f = iofd_get (fd);
 	/**
