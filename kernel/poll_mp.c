@@ -14,6 +14,7 @@
 #include <api/aosl_types.h>
 #include <kernel/err.h>
 #include <api/aosl_time.h>
+#include <api/aosl_alloca.h>
 #include <kernel/mp_queue.h>
 
 
@@ -64,7 +65,7 @@ int os_mp_wait_poll (struct mp_queue *q, aosl_poll_event_t *events, int maxevent
 	struct iofd *f = NULL;
 
 	if (q->iofd_count > POLL_MAX_FDS)
-		return -ENFILE;
+		return -AOSL_ENFILE;
 
 	fds_count = q->iofd_count;
 	fds_count++;

@@ -53,7 +53,6 @@ static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockad
 	switch (ah_addr->sa_family) {
 	case AOSL_AF_INET: {
 		struct sockaddr_in *v4 = (struct sockaddr_in *)os_addr;
-		//*v4 = *(const struct sockaddr_in *)ah_addr;
 		v4->sin_family = AF_INET;
 		v4->sin_port = ah_addr->sa_port;
 		v4->sin_addr.s_addr = ah_addr->sin_addr;
@@ -61,8 +60,7 @@ static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockad
 	}
 	case AOSL_AF_INET6: {
 		struct sockaddr_in6 *v6 = (struct sockaddr_in6 *)os_addr;
-		//*v6 = *(const struct sockaddr_in6 *)ah_addr;
-		v6->sin6_family = AF_INET;
+		v6->sin6_family = AF_INET6;
 		v6->sin6_port = ah_addr->sa_port;
 		v6->sin6_flowinfo = ah_addr->sin6_flowinfo;
 		v6->sin6_scope_id = ah_addr->sin6_scope_id;
@@ -82,7 +80,6 @@ static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockad
 	switch (os_addr->sa_family) {
 	case AF_INET: {
 		const struct sockaddr_in *v4 = (const struct sockaddr_in *)os_addr;
-		//*(struct sockaddr_in *)ah_addr = *v4;
 		ah_addr->sa_family = AOSL_AF_INET;
 		ah_addr->sa_port = v4->sin_port;
 		ah_addr->sin_addr = v4->sin_addr.s_addr;
@@ -90,7 +87,6 @@ static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockad
 	}
 	case AF_INET6: {
 		const struct sockaddr_in6 *v6 = (const struct sockaddr_in6 *)os_addr;
-		//*(struct sockaddr_in6 *)os_addr = *v6;
 		ah_addr->sa_family = AOSL_AF_INET6;
 		ah_addr->sa_port = v6->sin6_port;
 		ah_addr->sin6_flowinfo = v6->sin6_flowinfo;

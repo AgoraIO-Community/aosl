@@ -57,7 +57,7 @@ static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockad
     case AOSL_AF_INET6: {
 #if LWIP_IPV6
       struct sockaddr_in6 *v6 = (struct sockaddr_in6 *)os_addr;
-      v6->sin6_family = AF_INET;
+      v6->sin6_family = AF_INET6;
       v6->sin6_port = ah_addr->sa_port;
       v6->sin6_flowinfo = ah_addr->sin6_flowinfo;
       v6->sin6_scope_id = ah_addr->sin6_scope_id;

@@ -1127,6 +1127,26 @@ __export_in_so__ void aosl_ip_sk_close (aosl_ip_sk_t *sk)
 #endif
 }
 
+__export_in_so__ const char *aosl_sockaddr_str(const aosl_sockaddr_t *addr, char *addr_buf, size_t buf_len)
+{
+	switch (addr->sa_family) {
+	case AOSL_AF_INET:
+		k_inet_ntop (AOSL_AF_INET, &addr->sin_addr, addr_buf, buf_len);
+		break;
+
+#ifdef CONFIG_AOSL_IPV6
+	case AOSL_AF_INET6:
+		k_inet_ntop (AOSL_AF_INET6, &addr->sin6_addr, addr_buf, buf_len);
+		break;
+#endif
+	default:
+		snprintf (addr_buf, buf_len, "<Unknown af %d>", addr->sa_family);
+		break;
+	}
+
+	return addr_buf;
+}
+
 __export_in_so__ const char *aosl_inet_addr_str (int af, const void *addr, char *addr_buf, size_t buf_len)
 {
 	switch (af) {

@@ -159,6 +159,7 @@ typedef struct {
 
 extern __aosl_api__ int aosl_sk_addr_ip_equal (const aosl_sockaddr_t *addr1, const aosl_sockaddr_t *addr2);
 
+extern __aosl_api__ const char *aosl_sockaddr_str(const aosl_sockaddr_t *addr, char *addr_buf, size_t buf_len);
 extern __aosl_api__ const char *aosl_inet_addr_str (int af, const void *addr, char *addr_buf, size_t buf_len);
 extern __aosl_api__ const char *aosl_ip_sk_addr_str (const aosl_sk_addr_t *addr, char *addr_buf, size_t buf_len);
 extern __aosl_api__ unsigned short aosl_ip_sk_addr_port (const aosl_sk_addr_t *addr);

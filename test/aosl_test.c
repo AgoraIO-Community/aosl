@@ -190,7 +190,49 @@ __tag_out:
 #if defined(AOSL_HAL_HAVE_POLL) && (AOSL_HAL_HAVE_POLL == 1)
 static int aosl_test_hal_iomp_poll(int server_fd, int client_fd, const aosl_sockaddr_t *server_addr)
 {
+  int ret;
+  aosl_poll_event_t event = {0};
+  char snd_buf[100] = {0};
+  char rcv_buf[100] = {0};
 
+  for (int i = 0; i < 10; i++) {
+    sprintf(snd_buf, "iomp test msg [%d]", i);
+    ret = aosl_hal_sk_sendto(client_fd, snd_buf, sizeof(snd_buf), 0, server_addr);
+    if (ret != sizeof(snd_buf)) {
+      LOG_FMT("[%d] send failed, ret=%d", i, ret);
+      ret = -1;
+      goto __tag_out;
+    }
+
+    memset(&event, 0, sizeof(event));
+    event.fd = server_fd;
+    event.events = AOSL_POLLIN;
+    ret = aosl_hal_poll(&event, 1, 1000);
+    if (ret <= 0) {
+      LOG_FMT("[%d] epoll failed, ret=%d", i, ret);
+      ret = -1;
+      goto __tag_out;
+    }
+
+    if (!(event.revents & AOSL_POLLIN)) {
+      LOG_FMT("[%d] fd check failed", i);
+      ret = -1;
+      goto __tag_out;
+    }
+
+    ret = aosl_hal_sk_recvfrom(server_fd, rcv_buf, sizeof(rcv_buf), 0, NULL);
+    if (ret != sizeof(rcv_buf)) {
+      LOG_FMT("[%d] recvfrom failed, ret=%d", i, ret);
+      ret = -1;
+      goto __tag_out;
+    }
+    LOG_FMT("rcv_msg='%s'", rcv_buf);
+  }
+
+  ret = 0;
+
+__tag_out:
+  return ret;
 }
 #endif
 
@@ -306,13 +348,290 @@ __tag_out:
   return 0;
 }
 
+
+static int aosl_test_hal_socket_trans_udp(char *server_ip)
+{
+  aosl_sockaddr_t addr = {0};
+  const char *dns_server = "8.8.8.8";
+  addr.sa_family = AOSL_AF_INET;
+  addr.sa_port = aosl_htons(53);
+  aosl_inet_addr_from_string(&addr.sin_addr, dns_server);
+
+  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
+  if (aosl_fd_invalid(fd)) {
+    LOG_FMT("create socket failed, fd=%d", fd);
+    return -1;
+  }
+
+  // Construct a simple DNS query (A record for ipinfo.io)
+  char dns_query[512];
+  int query_len = 0;
+  unsigned char query[] = {
+      0xAA, 0xAA,  // random ID
+      0x01, 0x00,  // standard query
+      0x00, 0x01,  // 1 question
+      0x00, 0x00,  // 0 answers
+      0x00, 0x00,  // 0 authority
+      0x00, 0x00,  // 0 additional
+      // query ipinfo.io
+      0x06, 'i', 'p', 'i', 'n', 'f', 'o',
+      0x02, 'i', 'o',
+      0x00,        // termination
+      0x00, 0x01,  // query type A
+      0x00, 0x01   // query class IN
+  };
+  memcpy(dns_query, query, sizeof(query));
+  query_len = sizeof(query);
+
+  int sent = aosl_hal_sk_sendto(fd, dns_query, query_len, 0, &addr);
+  if (sent < 0) {
+    LOG_FMT("sendto failed, ret=%d", sent);
+    goto __tag_failed;
+  }
+  char buffer[1024];
+  int received = aosl_hal_sk_recvfrom(fd, buffer, sizeof(buffer), 0, NULL);
+  if (received <= 0) {
+    LOG_FMT("recvfrom failed, ret=%d", received);
+    goto __tag_failed;
+  }
+
+  // Parse DNS response and print IPv4 A records
+  if (received >= 12) {
+    unsigned char *p = (unsigned char *)buffer;
+    int offset = 0;
+    if (received < 12) {
+      LOG_FMT("dns response too short, len=%d", received);
+      goto __tag_failed;
+    }
+    uint16_t qdcount = (p[4] << 8) | p[5];
+    uint16_t ancount = (p[6] << 8) | p[7];
+    offset = 12;
+
+    // Skip question section
+    for (uint16_t qi = 0; qi < qdcount; qi++) {
+      if (offset >= received) break;
+      // Skip name label chain
+      while (offset < received && p[offset] != 0) {
+        // If it's a pointer (compressed form)
+        if ((p[offset] & 0xC0) == 0xC0) {
+          offset += 2;
+          break;
+        }
+        unsigned int labellen = p[offset];
+        offset += 1 + labellen;
+      }
+      if (offset < received && p[offset] == 0) offset++;
+      // Skip qtype(2) + qclass(2)
+      offset += 4;
+    }
+
+    // Parse answer section
+    for (uint16_t ai = 0; ai < ancount; ai++) {
+      if (offset + 10 > received) break; // Need at least type/class/ttl/rdlength
+
+      // Skip name (may be pointer or label chain)
+      if ((p[offset] & 0xC0) == 0xC0) {
+        offset += 2;
+      } else {
+        while (offset < received && p[offset] != 0) {
+          if ((p[offset] & 0xC0) == 0xC0) { offset += 2; break; }
+          unsigned int labellen = p[offset];
+          offset += 1 + labellen;
+        }
+        if (offset < received && p[offset] == 0) offset++;
+      }
+
+      if (offset + 10 > received) break;
+      uint16_t type = (p[offset] << 8) | p[offset + 1];
+      uint16_t clas = (p[offset + 2] << 8) | p[offset + 3];
+      (void)clas;
+      // ttl 4 bytes
+      uint16_t rdlen = (p[offset + 8] << 8) | p[offset + 9];
+      offset += 10;
+      if (offset + rdlen > received) break;
+
+      // A record
+      if (type == 1 && rdlen == 4) {
+        snprintf(server_ip, 16, "%u.%u.%u.%u", p[offset], p[offset + 1], p[offset + 2], p[offset + 3]);
+        LOG_FMT("got ipinfo.io : A record: %u.%u.%u.%u", p[offset], p[offset + 1], p[offset + 2], p[offset + 3]);
+      }
+
+      offset += rdlen;
+    }
+  } else {
+    LOG_FMT("dns response too short, len=%d", received);
+    goto __tag_failed;
+  }
+
+  aosl_hal_sk_close(fd);
+  LOG_FMT("test success");
+  return 0;
+
+__tag_failed:
+  aosl_hal_sk_close(fd);
+  return -1;
+}
+
+static int aosl_test_hal_socket_trans_tcp(char *server_ip)
+{
+  aosl_sockaddr_t addr = {0};
+  addr.sa_family = AOSL_AF_INET;
+  addr.sa_port = aosl_htons(80);
+  aosl_inet_addr_from_string(&addr.sin_addr, server_ip);
+
+  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
+  if (aosl_fd_invalid(fd)) {
+    LOG_FMT("create tcp socket failed, fd=%d", fd);
+    return -1;
+  }
+
+  const char *host = "ipinfo.io";
+  if (aosl_hal_sk_connect(fd, &addr) != 0) {
+    LOG_FMT("connect to %s (IP %s):80 failed", host, server_ip);
+    aosl_hal_sk_close(fd);
+    return -1;
+  }
+
+  char req[256];
+  int req_len = snprintf(req, sizeof(req), "GET /ip HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n", host);
+  if (req_len <= 0 || req_len >= (int)sizeof(req)) {
+    LOG_FMT("build http request failed");
+    aosl_hal_sk_close(fd);
+    return -1;
+  }
+
+  int sent = aosl_hal_sk_send(fd, req, req_len, 0);
+  if (sent < 0) {
+    LOG_FMT("send http request failed, ret=%d", sent);
+    aosl_hal_sk_close(fd);
+    return -1;
+  }
+
+  char resp[1024];
+  int total = 0;
+  while (total < (int)sizeof(resp) - 1) {
+    int r = aosl_hal_sk_recv(fd, resp + total, sizeof(resp) - 1 - total, 0);
+    if (r < 0) {
+      LOG_FMT("recv failed, ret=%d", r);
+      aosl_hal_sk_close(fd);
+      return -1;
+    }
+    if (r == 0) break; // remote closed
+    total += r;
+  }
+  resp[total] = '\0';
+
+  // find header-body separator
+  char *body = NULL;
+  char *sep = NULL;
+  sep = strstr(resp, "\r\n\r\n");
+  if (sep) body = sep + 4;
+  else {
+    // maybe only LF
+    sep = strstr(resp, "\n\n");
+    if (sep) body = sep + 2;
+  }
+
+  if (!body) {
+    LOG_FMT("invalid http response, no header/body separator");
+    aosl_hal_sk_close(fd);
+    return -1;
+  }
+
+  LOG_FMT("http response body: '%s'", body);
+
+  // trim leading/trailing whitespace from body
+  while (*body == '\r' || *body == '\n' || *body == ' ' || *body == '\t') body++;
+  char *end = body + strlen(body) - 1;
+  while (end > body && (*end == '\r' || *end == '\n' || *end == ' ' || *end == '\t')) { *end = '\0'; end--; }
+
+  // validate IPv4 dotted format
+  unsigned int a, b, c, d;
+  int n = sscanf(body, "%u.%u.%u.%u", &a, &b, &c, &d);
+  if (n == 4 && a <= 255 && b <= 255 && c <= 255 && d <= 255) {
+    snprintf(server_ip, 16, "%u.%u.%u.%u", a, b, c, d);
+    LOG_FMT("got wan ip: %s", server_ip);
+    LOG_FMT("test success");
+    aosl_hal_sk_close(fd);
+    return 0;
+  }
+
+  LOG_FMT("invalid ip format in response: '%s'", body);
+  aosl_hal_sk_close(fd);
+  return -1;
+}
+
+static int aosl_test_hal_socket_trans(void)
+{
+  char server_ip[16] = {0};
+  CHECK(aosl_test_hal_socket_trans_udp(server_ip) == 0);
+  CHECK(aosl_test_hal_socket_trans_tcp(server_ip) == 0);
+  LOG_FMT("test success");
+  return 0;
+}
+
+static int aosl_test_hal_socket_maxcnt(void)
+{
+  int fds[20];
+  int cnt = 0;
+
+  for (;;) {
+    int fd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
+    if (fd < 0) {
+      break;
+    }
+
+    if (cnt >= 20) {
+      // reached configured cap, close this fd and stop
+      aosl_hal_sk_close(fd);
+      break;
+    }
+    fds[cnt++] = fd;
+  }
+
+  LOG_FMT("max sockets opened: %d", cnt);
+
+  // close all opened sockets
+  for (int i = 0; i < cnt; i++) {
+    aosl_hal_sk_close(fds[i]);
+  }
+
+  return (cnt >= 10) ? 0 : -1;
+}
+
+static int aosl_test_hal_socket_dns(void)
+{
+  const char *server_name = "ap1.agora.io";
+  aosl_sockaddr_t addrs[100] = {0};
+  int ret = aosl_hal_gethostbyname(server_name, addrs, 100);
+  if (ret < 0) {
+    LOG_FMT("dns resolve %s failed, ret=%d", server_name, ret);
+    return -1;
+  }
+  LOG_FMT("dns resolve %s success, ret=%d, result:", server_name, ret);
+
+  for (int i = 0; i < ret; i++) {
+    char ip_str[64] = {0};
+    aosl_sockaddr_str(&addrs[i], ip_str, sizeof(ip_str));
+    LOG_FMT("  addr[%d]: %s", i, ip_str);
+  }
+
+  LOG_FMT("test success");
+  return 0;
+}
+
 static int aosl_test_hal_socket(void)
 {
+  CHECK(aosl_test_hal_socket_trans() == 0);
+  CHECK(aosl_test_hal_socket_maxcnt() == 0);
+  CHECK(aosl_test_hal_socket_dns() == 0);
+  LOG_FMT("test success");
   return 0;
 }
 
 static int aosl_test_hal_thread(void)
 {
+  
   return 0;
 }
 

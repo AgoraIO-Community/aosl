@@ -58,7 +58,6 @@ static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockad
 	switch (ah_addr->sa_family) {
 		case AOSL_AF_INET: {
 			struct sockaddr_in *v4 = (struct sockaddr_in *)os_addr;
-		//*v4 = *(const struct sockaddr_in *)ah_addr;
 			v4->sin_family = AF_INET;
 			v4->sin_port = ah_addr->sa_port;
 			v4->sin_addr.s_addr = ah_addr->sin_addr;
@@ -66,8 +65,7 @@ static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockad
 		}
 		case AOSL_AF_INET6: {
 			struct sockaddr_in6 *v6 = (struct sockaddr_in6 *)os_addr;
-			//*v6 = *(const struct sockaddr_in6 *)ah_addr;
-			v6->sin6_family = AF_INET;
+			v6->sin6_family = AF_INET6;
 			v6->sin6_port = ah_addr->sa_port;
 			v6->sin6_flowinfo = ah_addr->sin6_flowinfo;
 			v6->sin6_scope_id = ah_addr->sin6_scope_id;
@@ -87,7 +85,6 @@ static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockad
 	switch (os_addr->sa_family) {
 		case AF_INET: {
 			const struct sockaddr_in *v4 = (const struct sockaddr_in *)os_addr;
-			//*(struct sockaddr_in *)ah_addr = *v4;
 			ah_addr->sa_family = AOSL_AF_INET;
 			ah_addr->sa_port = v4->sin_port;
 			ah_addr->sin_addr = v4->sin_addr.s_addr;
@@ -95,7 +92,6 @@ static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockad
 		}
 		case AF_INET6: {
 			const struct sockaddr_in6 *v6 = (const struct sockaddr_in6 *)os_addr;
-			//*(struct sockaddr_in6 *)os_addr = *v6;
 			ah_addr->sa_family = AOSL_AF_INET6;
 			ah_addr->sa_port = v6->sin6_port;
 			ah_addr->sin6_flowinfo = v6->sin6_flowinfo;
@@ -325,21 +321,29 @@ int aosl_hal_gethostbyname(const char *hostname, aosl_sockaddr_t *addrs, int add
 {
 	struct addrinfo *res = NULL;
 	int count = 0;
+	struct addrinfo hints = {
+		.ai_flags = AI_ADDRCONFIG,
+		.ai_family = AF_UNSPEC,
+		.ai_socktype = SOCK_DGRAM,
+		.ai_protocol = IPPROTO_UDP,
+		.ai_addrlen = 0,
+		.ai_addr = NULL,
+		.ai_canonname = NULL,
+		.ai_next = NULL,
+	};
 
-	int err = getaddrinfo (hostname, NULL, NULL, &res);
+	int err = getaddrinfo(hostname, NULL, &hints, &res);
 	if (err != 0) {
 		return 0;
 	}
 
 	struct addrinfo *ai = NULL;
-	struct sockaddr *n_addr = NULL;
 	for (ai = res; ai != NULL && count < addr_count; ai = ai->ai_next) {
+		if (ai->ai_addr == NULL || ai->ai_addrlen == 0) continue;
 		switch (ai->ai_family) {
 		case AF_INET:
-			/* fall through */
 		case AF_INET6:
-			n_addr = ai->ai_addr;
-			conv_addr_to_aosl(n_addr, &addrs[count]);
+			conv_addr_to_aosl(ai->ai_addr, &addrs[count]);
 			count++;
 			break;
 		default:
@@ -348,7 +352,7 @@ int aosl_hal_gethostbyname(const char *hostname, aosl_sockaddr_t *addrs, int add
 	}
 
 	if (res != NULL) {
-		freeaddrinfo (res);
+		freeaddrinfo(res);
 	}
 
 	return count;
