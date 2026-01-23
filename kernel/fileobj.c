@@ -27,7 +27,7 @@ static int max_fd_curr = -1;
 static struct file_obj **attached_fds = NULL;
 static uintptr_t fds_count = 0;
 
-static __always_inline int expand_fdtable_locked (int nr)
+static inline int expand_fdtable_locked (int nr)
 {
 	int new_max = max_fd_alloc;
 	int inc_step = 16;
@@ -85,7 +85,7 @@ ____out:
 	return err;
 }
 
-static __always_inline void remove_file_locked (struct file_obj *f, int fd)
+static inline void remove_file_locked (struct file_obj *f, int fd)
 {
 	UNUSED(f);
 	struct file_obj **__fds = attached_fds;
@@ -118,7 +118,7 @@ ____out:
 	return err;
 }
 
-static __always_inline struct file_obj *__fcheck (int fd)
+static inline struct file_obj *__fcheck (int fd)
 {
 	if (fd > max_fd_curr)
 		return NULL;

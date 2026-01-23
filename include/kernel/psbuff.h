@@ -160,17 +160,17 @@ static inline void *psb_pull (struct ps_buff *psb, unsigned int len)
 	return psb->data;
 }
 
-static __always_inline void *psb_data (const struct ps_buff *psb)
+static inline void *psb_data (const struct ps_buff *psb)
 {
 	return psb->data;
 }
 
-static __always_inline void *psb_tail (const struct ps_buff *psb)
+static inline void *psb_tail (const struct ps_buff *psb)
 {
 	return (uint8_t *)psb->data + psb->len;
 }
 
-static __always_inline unsigned int psb_len (const struct ps_buff *psb)
+static inline unsigned int psb_len (const struct ps_buff *psb)
 {
 	return psb->len;
 }

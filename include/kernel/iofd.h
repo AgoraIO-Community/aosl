@@ -158,7 +158,7 @@ extern void f_event_and_close (struct mp_queue *q, struct iofd *f, int iofd_err)
 #define MAX_LW_COPY_SIZE 96
 #define MIN_SYSCALL_SIZE (1024)
 
-static __always_inline int __iofd_better_move_buffer (struct iofd *f)
+static inline int __iofd_better_move_buffer (struct iofd *f)
 {
 	size_t buff_size;
 

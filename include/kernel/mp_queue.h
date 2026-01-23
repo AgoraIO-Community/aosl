@@ -176,12 +176,12 @@ struct mp_queue {
 	struct q_wait_entry *destroy_wait_tail;
 };
 
-static __always_inline void ____q_get (struct mp_queue *q)
+static inline void ____q_get (struct mp_queue *q)
 {
 	atomic_inc (&q->usage);
 }
 
-static __always_inline void ____q_put (struct mp_queue *q)
+static inline void ____q_put (struct mp_queue *q)
 {
 	atomic_dec (&q->usage);
 }
