@@ -34,6 +34,10 @@ int aosl_hal_thread_create(aosl_thread_t *thread, aosl_thread_param_t *param,
 	TaskHandle_t xTaskHandle;
 	int sched_priority = OS_PRIORITY_HIGH;
 
+	if (param->stack_size == 0) {
+		param->stack_size = 16 << 10;
+	}
+
 	/* Create the FreeRTOS task that will run the pthread. */
 	if (xTaskCreate ((TaskFunction_t)(void *)entry, param->name, (uint16_t)(param->stack_size / sizeof (StackType_t)),
 					 (void *)args, sched_priority, &xTaskHandle) != pdPASS) {
@@ -192,7 +196,8 @@ int aosl_hal_cond_timedwait(aosl_cond_t cond, aosl_mutex_t mutex, intptr_t timeo
 
 	struct timespec timeo;
 	struct timespec now;
-	clock_gettime (CLOCK_MONOTONIC, &now);
+	// Use CLOCK_REALTIME because esp32 not support CLOCK_MONOTONIC
+	clock_gettime (CLOCK_REALTIME, &now);
 	timeo.tv_sec = now.tv_sec + timeout_ms / 1000;
 	timeo.tv_nsec = now.tv_nsec + (timeout_ms % 1000) * 1000000;
 	while (timeo.tv_nsec >= 1000000000) {

@@ -76,6 +76,7 @@ Thumbs.db
 
 # Visual C++ cache files
 ipch/
+.cache/
 *.aps
 *.ncb
 *.opensdf

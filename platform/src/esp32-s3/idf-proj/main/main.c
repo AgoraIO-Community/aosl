@@ -23,6 +23,8 @@
 #define CONFIG_WIFI_PASSWORD "88888888"
 #define CONFIG_EXAMPLE_WIFI_LISTEN_INTERVAL 3
 
+static int g_flag_got_ip = 0;
+
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
   printf("wifi event %ld\n", event_id);
@@ -34,7 +36,8 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
     printf("wifi sta mode connect.\n");
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-    printf("got ip: \n" IPSTR, IP2STR(&event->ip_info.ip));
+    printf("got ip: " IPSTR "\n", IP2STR(&event->ip_info.ip));
+    g_flag_got_ip = 1;
   }
 }
 
@@ -64,11 +67,33 @@ static void setup_wifi(void)
   ESP_ERROR_CHECK(esp_wifi_start());
 
   esp_wifi_set_ps(WIFI_PS_NONE);
+
+  // Wait for IP address, max 10 seconds
+  int wait_count = 0;
+  const int max_wait_ms = 10000; // 10 seconds
+  const int check_interval_ms = 100; // Check every 100ms
+  const int max_iterations = max_wait_ms / check_interval_ms;
+  
+  printf("Waiting for IP address (max %d seconds)...\n", max_wait_ms / 1000);
+  
+  while (g_flag_got_ip == 0 && wait_count < max_iterations) {
+    vTaskDelay(check_interval_ms / portTICK_PERIOD_MS);
+    wait_count++;
+    if (wait_count % 10 == 0) {
+      printf("Still waiting for IP... (%d/%d seconds)\n", wait_count / 10, max_wait_ms / 1000);
+    }
+  }
+  
+  if (g_flag_got_ip == 1) {
+    printf("Successfully got IP address!\n");
+  } else {
+    printf("Timeout: Failed to get IP address after %d seconds\n", max_wait_ms / 1000);
+  }
 }
 
 void app_main(void)
 {
-    // Initialize NVS
+  // Initialize NVS
   esp_err_t ret = nvs_flash_init();
   if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
     ESP_ERROR_CHECK(nvs_flash_erase());
@@ -79,15 +104,13 @@ void app_main(void)
   // init and start wifi
   setup_wifi();
 
-  printf("Start AOSL test...\n");
-
-  aosl_test();
+  // do aosl test
+  if (g_flag_got_ip) {
+    aosl_test();
+  }
 
   while (1) {
     printf("nop loop...\n");
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
-  //printf("Restarting now.\n");
-  //fflush(stdout);
-  //esp_restart();
 }

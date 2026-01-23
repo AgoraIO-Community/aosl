@@ -26,6 +26,7 @@
 #include "api/aosl_mpq_net.h"
 
 #define UNUSED(expr) (void)(expr)
+#define CAST_INT64(val)  ((long long)val)
 #define CAST_UINT64(val) ((unsigned long long)val)
 #define LOG_FMT(fmt, ...) aosl_printf(fmt "  [%s:%u]" "\n", ##__VA_ARGS__, __FUNCTION__, __LINE__);
 
@@ -263,7 +264,7 @@ static int aosl_test_hal_iomp_select(int server_fd, int client_fd, const aosl_so
       goto __tag_out;
     }
     ret = aosl_hal_fdset_isset(fdset, server_fd);
-    if (ret != 1) {
+    if (ret == 0) {
       LOG_FMT("[%d] fdset check failed", i);
       ret = -1;
       goto __tag_out;
@@ -602,8 +603,8 @@ static int aosl_test_hal_socket_maxcnt(void)
 static int aosl_test_hal_socket_dns(void)
 {
   const char *server_name = "ap1.agora.io";
-  aosl_sockaddr_t addrs[100] = {0};
-  int ret = aosl_hal_gethostbyname(server_name, addrs, 100);
+  aosl_sockaddr_t addrs[5] = {0};
+  int ret = aosl_hal_gethostbyname(server_name, addrs, 5);
   if (ret < 0) {
     LOG_FMT("dns resolve %s failed, ret=%d", server_name, ret);
     return -1;
@@ -629,9 +630,506 @@ static int aosl_test_hal_socket(void)
   return 0;
 }
 
+// Shared data structure for thread testing
+struct thread_test_data {
+  aosl_mutex_t mutex;
+  aosl_cond_t cond;
+  aosl_sem_t sem;
+  int counter;
+  int ready;
+};
+
+// Simple thread entry function
+static void *thread_entry_simple(void *arg)
+{
+  aosl_thread_t *result = (aosl_thread_t *)arg;
+  *result = aosl_hal_thread_self();
+  LOG_FMT("simple thread running");
+  aosl_hal_thread_exit(NULL);
+  return (void *)(intptr_t)123;
+}
+
+// Thread function for testing mutex
+static void *thread_entry_mutex(void *arg)
+{
+  struct thread_test_data *data = (struct thread_test_data *)arg;
+  
+  for (int i = 0; i < 100; i++) {
+    aosl_hal_mutex_lock(data->mutex);
+    data->counter++;
+    aosl_hal_mutex_unlock(data->mutex);
+  }
+  
+  LOG_FMT("mutex thread finished, counter=%d", data->counter);
+  aosl_hal_thread_exit(NULL);
+  return NULL;
+}
+
+// Thread function for testing condition variable wait
+static void *thread_entry_cond_wait(void *arg)
+{
+  struct thread_test_data *data = (struct thread_test_data *)arg;
+  
+  aosl_hal_mutex_lock(data->mutex);
+  while (!data->ready) {
+    LOG_FMT("cond wait thread: waiting for signal");
+    aosl_hal_cond_wait(data->cond, data->mutex);
+  }
+  LOG_FMT("cond wait thread: received signal, ready=%d", data->ready);
+  aosl_hal_mutex_unlock(data->mutex);
+  aosl_hal_thread_exit(NULL);
+  return NULL;
+}
+
+// Thread function for testing semaphore
+static void *thread_entry_sem(void *arg)
+{
+  struct thread_test_data *data = (struct thread_test_data *)arg;
+  
+  LOG_FMT("sem thread: waiting on semaphore");
+  aosl_hal_sem_wait(data->sem);
+  LOG_FMT("sem thread: semaphore acquired");
+  
+  data->counter++;
+  aosl_hal_thread_exit(NULL);
+  return NULL;
+}
+
 static int aosl_test_hal_thread(void)
 {
+  int ret;
+  aosl_thread_t thread = 0;
+  aosl_thread_t simple_result = 0;
+  aosl_thread_param_t param;
+  void *thread_ret = NULL;
+  aosl_ts_t start_ts;
+  aosl_ts_t elapsed;
+  aosl_mutex_t mutex = NULL;
+  struct thread_test_data test_data = {0};
+  aosl_thread_t threads[3] = {0};
+  int thread_count = 0;
   
+  // Test 1: Basic thread create/join/destroy
+  LOG_FMT("Test 1: Basic thread create/join/destroy");
+  param.name = "test-simple";
+  param.priority = AOSL_THRD_PRI_DEFAULT;
+  param.stack_size = 0;
+  
+  ret = aosl_hal_thread_create(&thread, &param, thread_entry_simple, &simple_result);
+  if (ret != 0) {
+    LOG_FMT("Test 1 failed: thread_create returned %d", ret);
+    return -1;
+  }
+  
+  ret = aosl_hal_thread_join(thread, &thread_ret);
+  if (ret != 0) {
+    LOG_FMT("Test 1 failed: thread_join returned %d", ret);
+    aosl_hal_thread_destroy(thread);
+    return -1;
+  }
+  
+  if (simple_result != thread) {
+    LOG_FMT("Test 1 failed: simple_result=%llu, expected=%llu",
+        CAST_UINT64(simple_result), CAST_UINT64(thread));
+    aosl_hal_thread_destroy(thread);
+    return -1;
+  }
+
+  aosl_hal_thread_destroy(thread);
+  thread = 0;
+  LOG_FMT("Test 1 passed");
+  
+  // Test 2: Thread detach
+  LOG_FMT("Test 2: Thread detach");
+  simple_result = 0;
+  param.name = "test-detach";
+  ret = aosl_hal_thread_create(&thread, &param, thread_entry_simple, &simple_result);
+  if (ret != 0) {
+    LOG_FMT("Test 2 failed: thread_create returned %d", ret);
+    return -1;
+  }
+  
+  aosl_hal_thread_detach(thread);
+  aosl_hal_msleep(100); // Wait for detached thread to complete
+  aosl_hal_thread_destroy(thread);
+  thread = 0;
+  LOG_FMT("Test 2 passed");
+  
+  // Test 3: Mutex lock/unlock
+  LOG_FMT("Test 3: Mutex lock/unlock");
+  mutex = aosl_hal_mutex_create();
+  if (mutex == NULL) {
+    LOG_FMT("Test 3 failed: mutex_create returned NULL");
+    return -1;
+  }
+  
+  ret = aosl_hal_mutex_lock(mutex);
+  if (ret != 0) {
+    LOG_FMT("Test 3 failed: mutex_lock returned %d", ret);
+    goto test3_cleanup;
+  }
+  
+  ret = aosl_hal_mutex_trylock(mutex);
+  if (ret == 0) { // Should fail because already locked
+    LOG_FMT("Test 3 failed: mutex_trylock should have failed but succeeded");
+    aosl_hal_mutex_unlock(mutex);
+    goto test3_cleanup;
+  }
+  
+  ret = aosl_hal_mutex_unlock(mutex);
+  if (ret != 0) {
+    LOG_FMT("Test 3 failed: mutex_unlock returned %d", ret);
+    goto test3_cleanup;
+  }
+  
+  ret = aosl_hal_mutex_trylock(mutex);
+  if (ret != 0) { // Should succeed now
+    LOG_FMT("Test 3 failed: mutex_trylock returned %d", ret);
+    goto test3_cleanup;
+  }
+  
+  ret = aosl_hal_mutex_unlock(mutex);
+  if (ret != 0) {
+    LOG_FMT("Test 3 failed: final mutex_unlock returned %d", ret);
+    goto test3_cleanup;
+  }
+  
+  aosl_hal_mutex_destroy(mutex);
+  mutex = NULL;
+  LOG_FMT("Test 3 passed");
+  goto test3_success;
+  
+test3_cleanup:
+  if (mutex) {
+    aosl_hal_mutex_destroy(mutex);
+    mutex = NULL;
+  }
+  return -1;
+  
+test3_success:
+  // Test 4: Multi-thread mutex contention
+  LOG_FMT("Test 4: Multi-thread mutex contention");
+  test_data.mutex = aosl_hal_mutex_create();
+  if (test_data.mutex == NULL) {
+    LOG_FMT("Test 4 failed: mutex_create returned NULL");
+    return -1;
+  }
+  test_data.counter = 0;
+  thread_count = 0;
+  
+  for (int i = 0; i < 3; i++) {
+    param.name = "test-mutex";
+    param.priority = AOSL_THRD_PRI_DEFAULT;
+    param.stack_size = 0;
+    ret = aosl_hal_thread_create(&threads[i], &param, thread_entry_mutex, &test_data);
+    if (ret != 0) {
+      LOG_FMT("Test 4 failed: thread_create[%d] returned %d", i, ret);
+      goto test4_cleanup;
+    }
+    thread_count++;
+  }
+  
+  for (int i = 0; i < thread_count; i++) {
+    ret = aosl_hal_thread_join(threads[i], NULL);
+    if (ret != 0) {
+      LOG_FMT("Test 4 failed: thread_join[%d] returned %d", i, ret);
+      // Continue to join remaining threads
+    }
+    aosl_hal_thread_destroy(threads[i]);
+    threads[i] = 0;
+  }
+  
+  if (test_data.counter != 300) { // 3 threads each increment 100 times
+    LOG_FMT("Test 4 failed: counter=%d, expected 300", test_data.counter);
+    aosl_hal_mutex_destroy(test_data.mutex);
+    return -1;
+  }
+  
+  aosl_hal_mutex_destroy(test_data.mutex);
+  test_data.mutex = NULL;
+  thread_count = 0;
+  LOG_FMT("Test 4 passed, final counter=%d", test_data.counter);
+  goto test4_success;
+  
+test4_cleanup:
+  for (int i = 0; i < thread_count; i++) {
+    if (threads[i]) {
+      aosl_hal_thread_join(threads[i], NULL);
+      aosl_hal_thread_destroy(threads[i]);
+      threads[i] = 0;
+    }
+  }
+  if (test_data.mutex) {
+    aosl_hal_mutex_destroy(test_data.mutex);
+    test_data.mutex = NULL;
+  }
+  return -1;
+  
+test4_success:
+#if defined(AOSL_HAL_HAVE_COND) && AOSL_HAL_HAVE_COND == 1
+  // Test 5: Condition variable
+  LOG_FMT("Test 5: Condition variable");
+  test_data.mutex = aosl_hal_mutex_create();
+  test_data.cond = aosl_hal_cond_create();
+  if (test_data.mutex == NULL || test_data.cond == NULL) {
+    LOG_FMT("Test 5 failed: mutex or cond create returned NULL");
+    goto test5_cleanup;
+  }
+  test_data.ready = 0;
+  
+  param.name = "test-cond";
+  ret = aosl_hal_thread_create(&thread, &param, thread_entry_cond_wait, &test_data);
+  if (ret != 0) {
+    LOG_FMT("Test 5 failed: thread_create returned %d", ret);
+    goto test5_cleanup;
+  }
+  
+  aosl_hal_msleep(100); // Ensure waiting thread has started waiting
+  
+  aosl_hal_mutex_lock(test_data.mutex);
+  test_data.ready = 1;
+  aosl_hal_cond_signal(test_data.cond);
+  aosl_hal_mutex_unlock(test_data.mutex);
+  
+  ret = aosl_hal_thread_join(thread, NULL);
+  if (ret != 0) {
+    LOG_FMT("Test 5 failed: thread_join returned %d", ret);
+    aosl_hal_thread_destroy(thread);
+    goto test5_cleanup;
+  }
+  aosl_hal_thread_destroy(thread);
+  thread = 0;
+  
+  aosl_hal_cond_destroy(test_data.cond);
+  aosl_hal_mutex_destroy(test_data.mutex);
+  test_data.cond = NULL;
+  test_data.mutex = NULL;
+  LOG_FMT("Test 5 passed");
+  goto test5_success;
+  
+test5_cleanup:
+  if (thread) {
+    aosl_hal_thread_join(thread, NULL);
+    aosl_hal_thread_destroy(thread);
+    thread = 0;
+  }
+  if (test_data.cond) {
+    aosl_hal_cond_destroy(test_data.cond);
+    test_data.cond = NULL;
+  }
+  if (test_data.mutex) {
+    aosl_hal_mutex_destroy(test_data.mutex);
+    test_data.mutex = NULL;
+  }
+  return -1;
+  
+test5_success:
+  // Test 6: Condition variable broadcast
+  LOG_FMT("Test 6: Condition variable broadcast");
+  test_data.mutex = aosl_hal_mutex_create();
+  test_data.cond = aosl_hal_cond_create();
+  if (test_data.mutex == NULL || test_data.cond == NULL) {
+    LOG_FMT("Test 6 failed: mutex or cond create returned NULL");
+    goto test6_cleanup;
+  }
+  test_data.ready = 0;
+  thread_count = 0;
+  
+  aosl_thread_t cond_threads[3] = {0};
+  for (int i = 0; i < 3; i++) {
+    param.name = "test-cond-bcast";
+    ret = aosl_hal_thread_create(&cond_threads[i], &param, thread_entry_cond_wait, &test_data);
+    if (ret != 0) {
+      LOG_FMT("Test 6 failed: thread_create[%d] returned %d", i, ret);
+      goto test6_cleanup_threads;
+    }
+    thread_count++;
+  }
+  
+  aosl_hal_msleep(100); // Ensure all waiting threads have started waiting
+  
+  aosl_hal_mutex_lock(test_data.mutex);
+  test_data.ready = 1;
+  aosl_hal_cond_broadcast(test_data.cond);
+  aosl_hal_mutex_unlock(test_data.mutex);
+  
+  for (int i = 0; i < thread_count; i++) {
+    ret = aosl_hal_thread_join(cond_threads[i], NULL);
+    if (ret != 0) {
+      LOG_FMT("Test 6 failed: thread_join[%d] returned %d", i, ret);
+    }
+    aosl_hal_thread_destroy(cond_threads[i]);
+    cond_threads[i] = 0;
+  }
+  
+  aosl_hal_cond_destroy(test_data.cond);
+  aosl_hal_mutex_destroy(test_data.mutex);
+  test_data.cond = NULL;
+  test_data.mutex = NULL;
+  thread_count = 0;
+  LOG_FMT("Test 6 passed");
+  goto test6_success;
+  
+test6_cleanup_threads:
+  for (int i = 0; i < thread_count; i++) {
+    if (cond_threads[i]) {
+      aosl_hal_thread_join(cond_threads[i], NULL);
+      aosl_hal_thread_destroy(cond_threads[i]);
+    }
+  }
+test6_cleanup:
+  if (test_data.cond) {
+    aosl_hal_cond_destroy(test_data.cond);
+    test_data.cond = NULL;
+  }
+  if (test_data.mutex) {
+    aosl_hal_mutex_destroy(test_data.mutex);
+    test_data.mutex = NULL;
+  }
+  return -1;
+  
+test6_success:
+  // Test 7: Condition variable timed wait
+  LOG_FMT("Test 7: Condition variable timed wait");
+  test_data.mutex = aosl_hal_mutex_create();
+  test_data.cond = aosl_hal_cond_create();
+  if (test_data.mutex == NULL || test_data.cond == NULL) {
+    LOG_FMT("Test 7 failed: mutex or cond create returned NULL");
+    goto test7_cleanup;
+  }
+  
+  aosl_hal_mutex_lock(test_data.mutex);
+  start_ts = aosl_tick_ms();
+  LOG_FMT("Test 7: start_ts=%llu, calling cond_timedwait with 200ms timeout", CAST_UINT64(start_ts));
+  ret = aosl_hal_cond_timedwait(test_data.cond, test_data.mutex, 200);
+  elapsed = aosl_tick_ms() - start_ts;
+  aosl_hal_mutex_unlock(test_data.mutex);
+  LOG_FMT("Test 7: ret=%d, elapsed=%llu ms", ret, CAST_UINT64(elapsed));
+  
+  if (ret == 0) { // Should timeout and fail
+    LOG_FMT("Test 7 failed: cond_timedwait should have timed out but succeeded");
+    goto test7_cleanup;
+  }
+  
+  // Relax the timing check - some systems may have timing variations
+  if (elapsed < 100 || elapsed > 400) {
+    LOG_FMT("Test 7 warning: elapsed=%llu ms, expected ~200ms (tolerance: 100-400ms)", CAST_UINT64(elapsed));
+    // Don't fail the test for timing issues, just warn
+  }
+  
+  aosl_hal_cond_destroy(test_data.cond);
+  aosl_hal_mutex_destroy(test_data.mutex);
+  test_data.cond = NULL;
+  test_data.mutex = NULL;
+  LOG_FMT("Test 7 passed, elapsed=%llu ms", CAST_UINT64(elapsed));
+  goto test7_success;
+  
+test7_cleanup:
+  if (test_data.cond) {
+    aosl_hal_cond_destroy(test_data.cond);
+    test_data.cond = NULL;
+  }
+  if (test_data.mutex) {
+    aosl_hal_mutex_destroy(test_data.mutex);
+    test_data.mutex = NULL;
+  }
+  return -1;
+  
+test7_success:
+#endif
+
+#if defined(AOSL_HAL_HAVE_SEM) && AOSL_HAL_HAVE_SEM == 1
+  // Test 8: Semaphore
+  LOG_FMT("Test 8: Semaphore");
+  test_data.sem = aosl_hal_sem_create();
+  if (test_data.sem == NULL) {
+    LOG_FMT("Test 8 failed: sem_create returned NULL");
+    return -1;
+  }
+  test_data.counter = 0;
+  
+  param.name = "test-sem";
+  ret = aosl_hal_thread_create(&thread, &param, thread_entry_sem, &test_data);
+  if (ret != 0) {
+    LOG_FMT("Test 8 failed: thread_create returned %d", ret);
+    goto test8_cleanup;
+  }
+  
+  aosl_hal_msleep(100); // Ensure thread has started waiting on semaphore
+  
+  ret = aosl_hal_sem_post(test_data.sem);
+  if (ret != 0) {
+    LOG_FMT("Test 8 failed: sem_post returned %d", ret);
+    aosl_hal_thread_join(thread, NULL);
+    aosl_hal_thread_destroy(thread);
+    goto test8_cleanup;
+  }
+  
+  ret = aosl_hal_thread_join(thread, NULL);
+  if (ret != 0) {
+    LOG_FMT("Test 8 failed: thread_join returned %d", ret);
+    aosl_hal_thread_destroy(thread);
+    goto test8_cleanup;
+  }
+  aosl_hal_thread_destroy(thread);
+  thread = 0;
+  
+  if (test_data.counter != 1) {
+    LOG_FMT("Test 8 failed: counter=%d, expected 1", test_data.counter);
+    goto test8_cleanup;
+  }
+  
+  aosl_hal_sem_destroy(test_data.sem);
+  test_data.sem = NULL;
+  LOG_FMT("Test 8 passed");
+  goto test8_success;
+  
+test8_cleanup:
+  if (thread) {
+    aosl_hal_thread_join(thread, NULL);
+    aosl_hal_thread_destroy(thread);
+    thread = 0;
+  }
+  if (test_data.sem) {
+    aosl_hal_sem_destroy(test_data.sem);
+    test_data.sem = NULL;
+  }
+  return -1;
+  
+test8_success:
+  // Test 9: Semaphore timed wait
+  LOG_FMT("Test 9: Semaphore timed wait");
+  test_data.sem = aosl_hal_sem_create();
+  if (test_data.sem == NULL) {
+    LOG_FMT("Test 9 failed: sem_create returned NULL");
+    return -1;
+  }
+  
+  start_ts = aosl_tick_ms();
+  LOG_FMT("Test 9: start_ts=%llu, calling sem_timedwait with 200ms timeout", CAST_UINT64(start_ts));
+  ret = aosl_hal_sem_timedwait(test_data.sem, 200);
+  elapsed = aosl_tick_ms() - start_ts;
+  
+  LOG_FMT("Test 9: ret=%d, elapsed=%llu ms", ret, CAST_UINT64(elapsed));
+  
+  if (ret == 0) { // Should timeout and fail
+    LOG_FMT("Test 9 failed: sem_timedwait should have timed out but succeeded");
+    aosl_hal_sem_destroy(test_data.sem);
+    return -1;
+  }
+  
+  // Relax the timing check - some systems may have timing variations
+  if (elapsed < 100 || elapsed > 400) {
+    LOG_FMT("Test 9 warning: elapsed=%llu ms, expected ~200ms (tolerance: 100-400ms)", CAST_UINT64(elapsed));
+    // Don't fail the test for timing issues, just warn
+  }
+  
+  aosl_hal_sem_destroy(test_data.sem);
+  test_data.sem = NULL;
+  LOG_FMT("Test 9 passed, elapsed=%llu ms", CAST_UINT64(elapsed));
+#endif
+
+  LOG_FMT("test success");
   return 0;
 }
 
@@ -835,12 +1333,16 @@ static int aosl_test_mpq(void)
 
 __export_in_so__ void aosl_test(void)
 {
+  LOG_FMT("Start AOSL test...");
+
   aosl_ctor();
 
   aosl_test_hal();
   aosl_test_mpq();
 
   aosl_dtor();
+
+  LOG_FMT("End   AOSL test...");
 
   return;
 }

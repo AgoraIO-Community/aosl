@@ -169,7 +169,8 @@ int aosl_hal_cond_timedwait(aosl_cond_t cond, aosl_mutex_t mutex, intptr_t timeo
 
   struct timespec timeo;
   struct timespec now;
-  clock_gettime (CLOCK_MONOTONIC, &now);
+  // Use CLOCK_REALTIME because pthread_cond_timedwait uses CLOCK_REALTIME by default
+  clock_gettime (CLOCK_REALTIME, &now);
   timeo.tv_sec = now.tv_sec + timeout / 1000;
   timeo.tv_nsec = now.tv_nsec + (timeout % 1000) * 1000000;
   while (timeo.tv_nsec >= 1000000000) {

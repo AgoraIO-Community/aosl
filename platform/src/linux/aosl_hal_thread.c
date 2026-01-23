@@ -166,14 +166,29 @@ aosl_cond_t aosl_hal_cond_create(void)
 		return NULL;
 	}
 
-	int err = pthread_cond_init(n_cond, NULL);
+	pthread_condattr_t cond_attr;
+	pthread_condattr_init(&cond_attr);
+	int err = pthread_condattr_setclock(&cond_attr, CLOCK_MONOTONIC);
+	if (err != 0) {
+		AOSL_LOG_ERR("cond attr set failed, err=%d", err);
+		pthread_condattr_destroy(&cond_attr);
+		goto __tag_failed;
+	}
+
+	err = pthread_cond_init(n_cond, &cond_attr);
+	pthread_condattr_destroy(&cond_attr);
 	if (err != 0) {
 		AOSL_LOG_ERR("cond create failed, err=%d", err);
-		aosl_free(n_cond);
-		return NULL;
+		goto __tag_failed;
 	}
 
 	return (aosl_cond_t)n_cond;
+
+__tag_failed:
+	if (n_cond) {
+		aosl_free(n_cond);
+	}
+	return NULL;
 }
 
 void aosl_hal_cond_destroy(aosl_cond_t cond)
@@ -249,7 +264,7 @@ aosl_sem_t aosl_hal_sem_create(void)
 		return NULL;
 	}
 
-	ret = sem_init(sem, 0, 1);
+	ret = sem_init(sem, 0, 0);
 	if (ret != 0) {
 		aosl_free(sem);
 		return NULL;
@@ -293,7 +308,8 @@ int aosl_hal_sem_timedwait(aosl_sem_t sem, intptr_t timeout_ms)
 
 	struct timespec timeo;
 	struct timespec now;
-	clock_gettime (CLOCK_MONOTONIC, &now);
+	// Use CLOCK_REALTIME because sem_timedwait always uses CLOCK_REALTIME
+	clock_gettime (CLOCK_REALTIME, &now);
 	timeo.tv_sec = now.tv_sec + timeout_ms / 1000;
 	timeo.tv_nsec = now.tv_nsec + (timeout_ms % 1000) * 1000000;
 	while (timeo.tv_nsec >= 1000000000) {
