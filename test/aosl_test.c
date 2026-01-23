@@ -645,7 +645,6 @@ static void *thread_entry_simple(void *arg)
   aosl_thread_t *result = (aosl_thread_t *)arg;
   *result = aosl_hal_thread_self();
   LOG_FMT("simple thread running");
-  aosl_hal_thread_exit(NULL);
   return (void *)(intptr_t)123;
 }
 
@@ -661,7 +660,6 @@ static void *thread_entry_mutex(void *arg)
   }
   
   LOG_FMT("mutex thread finished, counter=%d", data->counter);
-  aosl_hal_thread_exit(NULL);
   return NULL;
 }
 
@@ -677,7 +675,6 @@ static void *thread_entry_cond_wait(void *arg)
   }
   LOG_FMT("cond wait thread: received signal, ready=%d", data->ready);
   aosl_hal_mutex_unlock(data->mutex);
-  aosl_hal_thread_exit(NULL);
   return NULL;
 }
 
@@ -691,7 +688,6 @@ static void *thread_entry_sem(void *arg)
   LOG_FMT("sem thread: semaphore acquired");
   
   data->counter++;
-  aosl_hal_thread_exit(NULL);
   return NULL;
 }
 

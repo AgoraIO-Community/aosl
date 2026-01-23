@@ -26,6 +26,30 @@ typedef enum  {
 	OS_PRIORITY_REAL_TIME       = 6
 } OS_Priority;
 
+// Wrapper structure to pass pthread-style entry function to FreeRTOS task
+typedef struct {
+	void *(*entry)(void *);
+	void *arg;
+} thread_wrapper_args_t;
+
+// Wrapper function to convert pthread-style entry to FreeRTOS task
+static void thread_wrapper(void *arg)
+{
+	thread_wrapper_args_t *wrapper_args = (thread_wrapper_args_t *)arg;
+	void *(*entry)(void *) = wrapper_args->entry;
+	void *user_arg = wrapper_args->arg;
+	
+	// Free the wrapper args
+	aosl_free(wrapper_args);
+	
+	// Call the pthread-style entry function
+	void *retval = entry(user_arg);
+	
+	// FreeRTOS tasks should not return, so delete the task
+	(void)retval;
+	vTaskDelete(NULL);
+}
+
 int aosl_hal_thread_create(aosl_thread_t *thread, aosl_thread_param_t *param,
 													 void *(*entry)(void *), void *args)
 {
@@ -33,14 +57,25 @@ int aosl_hal_thread_create(aosl_thread_t *thread, aosl_thread_param_t *param,
 
 	TaskHandle_t xTaskHandle;
 	int sched_priority = OS_PRIORITY_HIGH;
+	int ret;
 
 	if (param->stack_size == 0) {
 		param->stack_size = 16 << 10;
 	}
 
-	/* Create the FreeRTOS task that will run the pthread. */
-	if (xTaskCreate ((TaskFunction_t)(void *)entry, param->name, (uint16_t)(param->stack_size / sizeof (StackType_t)),
-					 (void *)args, sched_priority, &xTaskHandle) != pdPASS) {
+	// Allocate wrapper args to pass both entry function and user args
+	thread_wrapper_args_t *wrapper_args = aosl_malloc(sizeof(thread_wrapper_args_t));
+	if (!wrapper_args) {
+		return -ENOMEM;
+	}
+	wrapper_args->entry = entry;
+	wrapper_args->arg = args;
+
+	/* Create the FreeRTOS task that will run the pthread-style entry function */
+	ret = xTaskCreate(thread_wrapper, param->name, (uint16_t)(param->stack_size / sizeof (StackType_t)),
+					 wrapper_args, sched_priority, &xTaskHandle);
+	if (ret != pdPASS) {
+		aosl_free(wrapper_args);
 		return -ENOMEM;
 	}
 

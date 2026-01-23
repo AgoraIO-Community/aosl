@@ -9,12 +9,46 @@
 #include <api/aosl_defs.h>
 #include <hal/aosl_hal_thread.h>
 
+// Wrapper structure to pass pthread-style entry function to FreeRTOS task
+typedef struct {
+  void *(*entry)(void *);
+  void *arg;
+} thread_wrapper_args_t;
+
+// Wrapper function to convert pthread-style entry to FreeRTOS task
+static void thread_wrapper(void *arg)
+{
+  thread_wrapper_args_t *wrapper_args = (thread_wrapper_args_t *)arg;
+  void *(*entry)(void *) = wrapper_args->entry;
+  void *user_arg = wrapper_args->arg;
+  
+  // Free the wrapper args
+  aosl_free(wrapper_args);
+  
+  // Call the pthread-style entry function
+  void *retval = entry(user_arg);
+  
+  // FreeRTOS tasks should not return, so delete the task
+  (void)retval;
+  rtos_delete_thread(NULL);
+}
+
 int aosl_hal_thread_create(aosl_thread_t *thread, aosl_thread_param_t *param,
                            void *(*entry)(void *), void *arg)
 {
   assert(sizeof(beken_thread_t) <= sizeof(aosl_thread_t));
+  
+  // Allocate wrapper args to pass both entry function and user args
+  thread_wrapper_args_t *wrapper_args = aosl_malloc(sizeof(thread_wrapper_args_t));
+  if (!wrapper_args) {
+    return -1;
+  }
+  wrapper_args->entry = entry;
+  wrapper_args->arg = arg;
+  
   beken_thread_t beken_thread = NULL;
-  rtos_create_psram_thread(&beken_thread, 2, param->name, (beken_thread_function_t)entry, 1024 * 12, (beken_thread_arg_t)arg);
+  rtos_create_psram_thread(&beken_thread, 2, param->name, (beken_thread_function_t)thread_wrapper,
+    1024 * 12, (beken_thread_arg_t)wrapper_args);
   *thread = (aosl_thread_t)beken_thread;
   return 0;
 }

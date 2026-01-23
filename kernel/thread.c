@@ -66,8 +66,6 @@ static void *k_os_thread_entry (void *arg)
 
 	entry (arg);
 
-	k_thread_exit (NULL);
-
 	return NULL;
 }
 
