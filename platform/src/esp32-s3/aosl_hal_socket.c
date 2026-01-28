@@ -312,32 +312,40 @@ int aosl_hal_sk_get_sockname(int sockfd, aosl_sockaddr_t *addr)
 
 int aosl_hal_gethostbyname(const char *hostname, aosl_sockaddr_t *addrs, int addr_count)
 {
+	struct addrinfo *res = NULL;
 	int count = 0;
-	char **list;
-	struct hostent *ent;
+	struct addrinfo hints = {
+		.ai_flags = AI_ADDRCONFIG,
+		.ai_family = AF_UNSPEC,
+		.ai_socktype = SOCK_DGRAM,
+		.ai_protocol = IPPROTO_UDP,
+		.ai_addrlen = 0,
+		.ai_addr = NULL,
+		.ai_canonname = NULL,
+		.ai_next = NULL,
+	};
 
-	if (NULL == (ent = lwip_gethostbyname(hostname))) {
+	int err = getaddrinfo(hostname, NULL, &hints, &res);
+	if (err != 0) {
 		return 0;
 	}
 
-	for (list = ent->h_addr_list; list != NULL && *list != NULL && count < addr_count; list++) {
-		union {
-			struct sockaddr any;
-			struct sockaddr_in ipv4;
-			aosl_sockaddr_in6_t ipv6;
-		} addr;
-
-		if (ent->h_addrtype == AF_INET6) {
-			memset(&addr, 0, sizeof(aosl_sockaddr_in6_t));
-			addr.ipv6.sin6_addr = *(aosl_in6_addr_t *)*list;
-		} else {
-			memset(&addr, 0, sizeof(struct sockaddr_in));
-			addr.ipv4.sin_addr = *(struct in_addr *)*list;
+	struct addrinfo *ai = NULL;
+	for (ai = res; ai != NULL && count < addr_count; ai = ai->ai_next) {
+		if (ai->ai_addr == NULL || ai->ai_addrlen == 0) continue;
+		switch (ai->ai_family) {
+		case AF_INET:
+		case AF_INET6:
+			conv_addr_to_aosl(ai->ai_addr, &addrs[count]);
+			count++;
+			break;
+		default:
+			break;
 		}
+	}
 
-		addr.any.sa_family = ent->h_addrtype;
-		conv_addr_to_aosl(&addr.any, &addrs[count]);
-		count++;
+	if (res != NULL) {
+		freeaddrinfo(res);
 	}
 
 	return count;
