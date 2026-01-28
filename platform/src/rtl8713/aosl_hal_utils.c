@@ -8,6 +8,9 @@
 
 int aosl_hal_get_uuid (char buf [], int buf_sz)
 {
+	if (buf_sz <= 1) {
+		return -1;
+	}
 	uint64_t ts_now = (uint64_t) aosl_hal_get_tick_ms ();
 	unsigned int s, r1, r2;
 
@@ -32,6 +35,9 @@ int aosl_hal_get_uuid (char buf [], int buf_sz)
 
 int aosl_hal_os_version (char buf [], int buf_sz)
 {
+	if (buf_sz <= 1) {
+		return -1;
+	}
 	snprintf(buf, buf_sz, "%s", "rtl8713");
 	return 0;
 }

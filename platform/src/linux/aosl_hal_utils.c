@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "stdio.h"
 
 int aosl_hal_get_uuid (char buf [], int buf_sz)
 {
@@ -11,7 +12,7 @@ int aosl_hal_get_uuid (char buf [], int buf_sz)
 	int err;
 	int s, d;
 
-	if (buf_sz < 32 + 1 /* including the last '\0' */) {
+	if (buf_sz <= 1) {
 		return -1;
 	}
 
@@ -34,7 +35,7 @@ int aosl_hal_get_uuid (char buf [], int buf_sz)
 		if ((size_t)d >= buf_sz - 1)
 			break;
 
-		if (uuid_buf [s] != '-') {
+		if (uuid_buf [s] != '-' && uuid_buf [s] != '\n' && uuid_buf [s] != '\r') {
 			buf [d] = uuid_buf [s];
 			d++;
 		}
@@ -51,9 +52,9 @@ int aosl_hal_get_uuid (char buf [], int buf_sz)
 int aosl_hal_os_version (char buf [], int buf_sz)
 {
 	int fd;
-	ssize_t err;
+	int err;
 
-	if (buf_sz < 63 + 1 /* including the last '\0' */) {
+	if (buf_sz <= 1) {
 		return -1;
 	}
 
