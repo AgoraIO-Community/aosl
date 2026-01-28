@@ -580,9 +580,14 @@ static int __mpqp_create_gen_pool (void)
 #ifdef CONFIG_LTWP_SIZE
 #define LTWP_SIZE CONFIG_LTWP_SIZE
 #else
-#define LTWP_SIZE 4
-#endif
-#define LTWP_MAX_IDLES 3
+#ifdef __linux__
+#define LTWP_SIZE 3
+#else
+#define LTWP_SIZE 1
+#endif // __linux__
+#endif // CONFIG_LTWP_SIZE
+
+#define LTWP_MAX_IDLES 1
 
 static int __mpqp_create_ltw_pool (void)
 {
@@ -608,8 +613,7 @@ static int __mpqp_create_ltw_pool (void)
 
 void k_mpqp_init (void)
 {
-	if (__mpqp_create_cpu_pool () < 0 || __mpqp_create_gpu_pool () < 0 ||
-		__mpqp_create_gen_pool () < 0 || __mpqp_create_ltw_pool () < 0)
+	if (__mpqp_create_ltw_pool () < 0)
 		abort ();
 }
 
@@ -1069,12 +1073,6 @@ __export_in_so__ void aosl_mpqp_destroy (aosl_mpqp_t qpobj, int wait)
 
 void k_mpqp_fini (void)
 {
-	aosl_mpqp_destroy (cpu_pool, 1);
-	aosl_mpqp_destroy (gpu_pool, 1);
-	aosl_mpqp_destroy (gen_pool, 1);
 	aosl_mpqp_destroy (ltw_pool, 1);
-	cpu_pool = NULL;
-	gpu_pool = NULL;
-	gen_pool = NULL;
 	ltw_pool = NULL;
 }
