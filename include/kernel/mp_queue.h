@@ -84,6 +84,7 @@ static __inline__ void mpq_stack_init (struct mpq_stack *stk, aosl_stack_id_t st
 static __inline__ void mpq_stack_fini (struct mpq_stack *stk)
 {
 	struct aosl_list_head *prepare_calls = stk->prepare_calls;
+	(void)prepare_calls;
 	stk->prepare_calls = NULL;
 	//free_prepare_calls (prepare_calls, NULL);
 	stk->err_stack_id = AOSL_STACK_INVALID;

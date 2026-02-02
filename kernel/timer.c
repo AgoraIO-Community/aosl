@@ -38,7 +38,6 @@ static uint16_t __timer_life_id = 1;
 
 void k_timer_init (void)
 {
-	int i;
 	timer_id_pool_bits = bitmap_create(STATIC_TIMER_ID_POOL_SIZE);
 	timer_table = (struct timer_node **)aosl_malloc_impl (sizeof (struct timer_node *) * STATIC_TIMER_ID_POOL_SIZE);
 	if (!timer_table || !timer_id_pool_bits) {

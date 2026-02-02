@@ -45,12 +45,12 @@ int aosl_hal_fclose(aosl_fs_t fs)
   return 0;
 }
 
-size_t aosl_hal_fread (aosl_fs_t fs, void *buf, size_t size)
+int aosl_hal_fread (aosl_fs_t fs, void *buf, size_t size)
 {
   return 0;
 }
 
-size_t aosl_hal_fwrite (aosl_fs_t fs, const void *buf, size_t size)
+int aosl_hal_fwrite (aosl_fs_t fs, const void *buf, size_t size)
 {
   return 0;
 }
