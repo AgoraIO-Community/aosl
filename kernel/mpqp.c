@@ -581,13 +581,14 @@ static int __mpqp_create_gen_pool (void)
 #define LTWP_SIZE CONFIG_LTWP_SIZE
 #else
 #ifdef __linux__
-#define LTWP_SIZE 3
+#define LTWP_SIZE 2
 #else
 #define LTWP_SIZE 1
 #endif // __linux__
 #endif // CONFIG_LTWP_SIZE
 
-#define LTWP_MAX_IDLES 1
+// max idles time (s)
+#define LTWP_MAX_IDLES 5
 
 static int __mpqp_create_ltw_pool (void)
 {
@@ -882,6 +883,7 @@ static int __mpqp_shrink (struct mpq_pool *qp, int wait)
 {
 	struct mp_queue *q = NULL;
 	struct q_wait_entry wait_entry;
+	int should_wait = wait;
 
 	if (!qp) {
 		return -1;
@@ -892,28 +894,27 @@ static int __mpqp_shrink (struct mpq_pool *qp, int wait)
 		struct pool_entry *entry = &qp->pool_entries [qp->q_count - 1];
 		BUG_ON (entry->usage == 0);
 		if (entry->usage == 1) {
-			/**
-			 * We only allow shrinking the pool entry when
-			 * the usage count is 1, and not permit if it
-			 * was alloc-ed.
-			 **/
+			// We only allow shrinking the pool entry when the usage count is 1, and not permit if it was alloc-ed.
 			q = entry->q;
 			entry->q = NULL;
 			entry->usage = 0;
 			qp->q_count--;
+			if (wait && THIS_MPQ() == q) {
+				should_wait = 0;
+			}
 		}
 	}
 	k_lock_unlock (&qp->lock);
 
 	if (q != NULL) {
-		if (wait) {
+		if (should_wait) {
 			__mpq_add_wait (q, &wait_entry);
 		}
 		____q_get (q);
 		__mpq_destroy (q);
 		____q_put (q);
 
-		if (wait) {
+		if (should_wait) {
 			__mpq_destroy_wait (&wait_entry);
 		}
 
@@ -927,6 +928,8 @@ static int __mpqp_shrink (struct mpq_pool *qp, int wait)
 static void __mpqp_shrink_all (struct mpq_pool *qp, int wait)
 {
 	int q_count = 0;
+	int this_idx = -1;
+	struct mp_queue *this_q = NULL;
 	struct q_wait_entry *wait_entries = NULL;
 	int i;
 
@@ -937,8 +940,11 @@ static void __mpqp_shrink_all (struct mpq_pool *qp, int wait)
 	k_lock_lock (&qp->lock);
 	q_count = qp->q_count;
 	if (q_count > 0) {
-		if (wait)
+		if (wait) {
+			this_q = THIS_MPQ();
 			wait_entries = aosl_alloca (sizeof (struct q_wait_entry) * q_count);
+			memset(wait_entries, 0, sizeof (struct q_wait_entry) * q_count);
+		}
 
 		for (i = 0; i < q_count; i++) {
 			struct pool_entry *entry = &qp->pool_entries [i];
@@ -953,8 +959,13 @@ static void __mpqp_shrink_all (struct mpq_pool *qp, int wait)
 			entry->usage = 0;
 
 			if (q != NULL) {
-				if (wait)
-					__mpq_add_wait (q, &wait_entries [i]);
+				if (wait) {
+					if (this_q == q) {
+						this_idx = i; // not wait in self q
+					} else {
+						__mpq_add_wait (q, &wait_entries [i]);
+					}
+				}
 
 				____q_get (q);
 				__mpq_destroy (q);
@@ -968,6 +979,7 @@ static void __mpqp_shrink_all (struct mpq_pool *qp, int wait)
 
 	if (wait_entries != NULL) {
 		for (i = 0; i < q_count; i++) {
+			if (i == this_idx) continue;
 			__mpq_destroy_wait (&wait_entries [i]);
 		}
 	}

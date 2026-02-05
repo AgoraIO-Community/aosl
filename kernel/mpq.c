@@ -732,8 +732,10 @@ static __inline__ intptr_t mpq_max_wait_time (struct mp_queue *q)
 
 static __inline__ void __free_q_obj (struct mp_queue *q)
 {
-	if (q->q_name != NULL)
+	if (q->q_name != NULL) {
+		AOSL_LOG_CRT("q_name=%s exit...", q->q_name);
 		aosl_free ((void *)q->q_name);
+	}
 
 	aosl_free ((void *)q);
 }
@@ -1741,7 +1743,7 @@ int __mpq_destroy_wait (struct q_wait_entry *wait)
 
 static int mpq_do_wait (aosl_mpq_t mpq_id, int issue_destroy, int check_allowed)
 {
-	struct q_wait_entry wait;
+	struct q_wait_entry wait = {0};
 	struct mp_queue *q;
 
 	q = __mpq_get (mpq_id);
