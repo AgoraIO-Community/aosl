@@ -499,18 +499,6 @@ int __check_and_run_timers (struct mp_queue *q)
 	int count = 0;
 
 	while ((timer = base->first) && time_after_eq (now, timer->expire_time)) {
-        #if defined(__kspreadtrum__)
-        // assure thread exit ASAP when exit notify is recevied
-        // 0. LTWP thread lifetime isn't over as agora_rtc_fini invoke
-        // 1. LTWP thread may be hang and wait timeout when DNS parse failed, usually 5 second
-        //    it occupies memory resource, eg: message queue
-        // 2. user can't wait 5 sec
-        // 3. if try enter-exit many times, thread create may be failed, which causes corruption in RTOS
-	    if (q->terminated) {
-	        break;
-        }
-        #endif
-
 		__unlink_timer (&q->timer_base, &timer->timer_node);
 
 		/* All oneshot timers must have invalid interval */

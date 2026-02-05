@@ -10,6 +10,7 @@
 #define __AOSL_HAL_SOCKET_H__
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

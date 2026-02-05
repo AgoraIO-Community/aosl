@@ -20,6 +20,7 @@
 typedef void (*k_obj_dtor_t) (void *obj);
 
 struct file_obj {
+	struct aosl_rb_node rb_node;
 	aosl_fd_t fd;
 	atomic_t usage;
 	int mpq_fd;

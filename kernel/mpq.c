@@ -687,18 +687,6 @@ static int __check_and_call_funcs (struct mp_queue *q)
 		k_lock_unlock (&q->lock);
 
 		while (head != NULL) {
-            #if defined(__kspreadtrum__)
-            // assure thread exit ASAP when exit notify is recevied
-            // 0. LTWP thread lifetime isn't over as agora_rtc_fini invoke
-            // 1. LTWP thread may be hang and wait timeout when DNS parse failed, usually 5 second
-            //    it occupies memory resource, eg: message queue
-            // 2. user can't wait 5 sec
-            // 3. if try enter-exit many times, thread create may be failed, which causes corruption in RTOS
-            if (q->terminated) {
-                break;
-            }
-            #endif
-
 			struct q_func_obj *fo = head;
 			head = head->next;
 			__process_fo (q, fo);

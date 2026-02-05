@@ -32,7 +32,11 @@ typedef int aosl_fd_t;
 
 static __inline__ int aosl_fd_invalid (aosl_fd_t fd)
 {
+#if defined(__kspreadtrum__)
+	return (fd == AOSL_INVALID_FD);
+#else
 	return (int)(fd < 0);
+#endif
 }
 
 

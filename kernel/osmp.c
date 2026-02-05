@@ -200,7 +200,7 @@ static int os_socket_pipe(int pipefd[2])
 
 	// server
 	int servfd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, 0);
-  if (servfd < 0) {
+  if (aosl_fd_invalid(servfd)) {
     AOSL_LOG_ERR("socket error");
     return -1;
   }
@@ -218,7 +218,7 @@ static int os_socket_pipe(int pipefd[2])
 
 	// client
 	int connfd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, 0);
-	if (connfd < 0) {
+	if (aosl_fd_invalid(connfd)) {
 		AOSL_LOG_ERR("socket error: %d", connfd);
 		return -1;
 	}

@@ -41,6 +41,7 @@ struct mpq_pool {
 	int q_flags;
 	int q_stack_size;
 	char qp_name [THREAD_NAME_LEN];
+	char q_name [THREAD_NAME_LEN];
 
 	aosl_mpq_init_t q_init;
 	aosl_mpq_fini_t q_fini;
@@ -184,12 +185,11 @@ static __inline__ struct mp_queue *__pool_create_mpq (struct mpq_pool *qp, const
 
 static struct pool_entry *__pool_create_add_mpq_locked (struct mpq_pool *qp)
 {
-	char q_name [THREAD_NAME_LEN + 12];
 	struct mp_queue *q;
 	struct pool_entry *entry;
 
-	snprintf (q_name, sizeof(q_name), "%s.%d", qp->qp_name, qp->q_count);
-	q = __pool_create_mpq (qp, q_name);
+	snprintf (qp->q_name, sizeof(qp->q_name), "%s.%d", qp->qp_name, qp->q_count);
+	q = __pool_create_mpq (qp, qp->q_name);
 	if (q == NULL) {
 		int err = aosl_errno;
 		return ERR_PTR (-err);

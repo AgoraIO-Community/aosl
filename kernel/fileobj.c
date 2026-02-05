@@ -8,7 +8,7 @@
  ***************************************************************************/
 
 #include <string.h>
-#include <stdlib.h>
+
 #include <api/aosl_types.h>
 #include <api/aosl_mm.h>
 #include <api/aosl_log.h>
@@ -17,67 +17,47 @@
 #include <kernel/fileobj.h>
 #include <kernel/thread.h>
 
-#define UNUSED(expr) (void)(expr)
-
 static k_rwlock_t fds_lock;
 static uint32_t __fobj_life_id = 0;
+static struct aosl_rb_root attached_fds;
 
-static int max_fd_alloc = -1;
-static int max_fd_curr = -1;
-static struct file_obj **attached_fds = NULL;
-static uintptr_t fds_count = 0;
-
-static inline int expand_fdtable_locked (int nr)
+static int cmp_fd (struct aosl_rb_node *rb_node, struct aosl_rb_node *node, va_list args)
 {
-	int new_max = max_fd_alloc;
-	int inc_step = 16;
-	struct file_obj **new_fds;
+	struct file_obj *rb_entry = aosl_rb_entry (rb_node, struct file_obj, rb_node);
+	aosl_fd_t fd;
 
-	while (nr > new_max)
-		new_max += inc_step;
-
-	new_fds = aosl_malloc ((new_max + 1) * sizeof (struct file_obj *));
-	if (new_fds == NULL)
-		return -1;
-
-	if (max_fd_curr >= 0) {
-		memcpy (new_fds, attached_fds, (max_fd_curr + 1) * sizeof (struct file_obj *));
-		aosl_free (attached_fds);
+	if (node != NULL) {
+		fd = aosl_rb_entry (node, struct file_obj, rb_node)->fd;
+	} else {
+		fd = va_arg (args, aosl_fd_t);
 	}
 
-	memset (&new_fds [max_fd_curr + 1], 0, (new_max - max_fd_curr) * sizeof (struct file_obj *));
-	attached_fds = new_fds;
-	max_fd_alloc = new_max;
+	if ((uintptr_t)rb_entry->fd > (uintptr_t)fd)
+		return 1;
+
+	if ((uintptr_t)rb_entry->fd < (uintptr_t)fd)
+		return -1;
+
 	return 0;
 }
 
-int install_fd (int fd, struct file_obj *f)
+int install_fd (aosl_fd_t fd, struct file_obj *f)
 {
 	int err;
-	struct file_obj **__fds;
+	struct aosl_rb_node *node;
 
 	if (aosl_fd_invalid (fd))
 		return -AOSL_EBADF;
 
 	k_rwlock_wrlock (&fds_lock);
-	if (fd > max_fd_alloc && expand_fdtable_locked (fd) < 0) {
-		err = -AOSL_ENOMEM;
-		goto ____out;
-	}
-
-	__fds = attached_fds;
-	if (__fds [fd] != NULL) {
+	node = aosl_find_rb_node (&attached_fds, NULL, fd);
+	if (node != NULL) {
 		err = -AOSL_EBUSY;
 		goto ____out;
 	}
 
 	f->life_id = __fobj_life_id++;
-	__fds [fd] = f;
-
-	if (fd > max_fd_curr)
-		max_fd_curr = fd;
-
-	fds_count++;
+	aosl_rb_insert_node (&attached_fds, &f->rb_node);
 	err = 0;
 
 ____out:
@@ -85,56 +65,34 @@ ____out:
 	return err;
 }
 
-static inline void remove_file_locked (struct file_obj *f, int fd)
-{
-	UNUSED(f);
-	struct file_obj **__fds = attached_fds;
-
-	__fds [fd] = NULL;
-
-	if (fd == max_fd_curr) {
-		while (max_fd_curr >= 0 && __fds [max_fd_curr] == NULL)
-			max_fd_curr--;
-	}
-
-	fds_count--;
-}
 
 int remove_fd (struct file_obj *f)
 {
-	int fd = f->fd;
-	int err = 0;
+	aosl_fd_t fd = f->fd;
+	struct aosl_rb_node *node;
 
 	k_rwlock_wrlock (&fds_lock);
-	if (aosl_fd_invalid (fd) || fd > max_fd_curr || attached_fds [fd] != f) {
-		err = -AOSL_ENOENT;
-		goto ____out;
-	}
-
-	remove_file_locked (f, fd);
-
-____out:
+	node = aosl_rb_remove (&attached_fds, NULL, fd);
 	k_rwlock_wrunlock (&fds_lock);
-	return err;
+
+	if (node != &f->rb_node)
+		return -AOSL_ENONET;
+
+	return 0;
 }
 
-static inline struct file_obj *__fcheck (int fd)
-{
-	if (fd > max_fd_curr)
-		return NULL;
-
-	return attached_fds [fd];
-}
-
-struct file_obj *fget (int fd)
+struct file_obj *fget (aosl_fd_t fd)
 {
 	if (!aosl_fd_invalid (fd)) {
-		struct file_obj *f;
+		struct aosl_rb_node *node;
+		struct file_obj *f = NULL;
 
 		k_rwlock_rdlock (&fds_lock);
-		f = __fcheck (fd);
-		if (f != NULL)
+		node = aosl_find_rb_node (&attached_fds, NULL, fd);
+		if (node != NULL) {
+			f = aosl_rb_entry (node, struct file_obj, rb_node);
 			__fget (f);
+		}
 		k_rwlock_rdunlock (&fds_lock);
 
 		return f;
@@ -153,25 +111,21 @@ void fput (struct file_obj *f)
 	}
 }
 
+static void attached_fds_check (void)
+{
+	if (NULL != aosl_rb_first (&attached_fds)) {
+		AOSL_LOG_ERR("[dtor] attached_fds no free");
+	}
+}
+
 void fileobj_init (void)
 {
 	k_rwlock_init (&fds_lock);
+	aosl_rb_root_init (&attached_fds, cmp_fd);
 }
 
 void fileobj_fini (void)
 {
-	if (attached_fds) {
-		for (int i = 0; i < max_fd_alloc; i++) {
-			if (attached_fds [i] != NULL) {
-				AOSL_LOG_ERR("[dtor] no free");
-			}
-		}
-		aosl_free (attached_fds);
-		attached_fds = NULL;
-	}
-	max_fd_alloc = -1;
-	max_fd_curr = -1;
-	fds_count = 0;
-
+	attached_fds_check ();
 	k_rwlock_destroy (&fds_lock);
 }
