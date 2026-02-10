@@ -1828,11 +1828,10 @@ struct test_mpq_client_res {
   aosl_sockaddr_t server_addr;
 };
 
-
 static struct test_mpq_server_res mpq_server_res = { 0 };
 static struct test_mpq_client_res mpq_client_res = { 0 };
 
-static void mpq_server_on_data(void *data, size_t len, uintptr_t argc, uintptr_t argv[], const aosl_sk_addr_t *addr)
+static void mpq_udp_server_on_data(void *data, size_t len, uintptr_t argc, uintptr_t argv[], const aosl_sk_addr_t *addr)
 {
   UNUSED(argc);
   UNUSED(addr);
@@ -1844,7 +1843,7 @@ static void mpq_server_on_data(void *data, size_t len, uintptr_t argc, uintptr_t
   }
 }
 
-static void mpq_server_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr_t argv[])
+static void mpq_udp_server_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr_t argv[])
 {
   UNUSED(argc);
   UNUSED(argv);
@@ -1854,7 +1853,7 @@ static void mpq_server_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr
   LOG_FMT("fd=%d event=%d\n", fd, event);
 }
 
-static void mpq_client_on_data(void *data, size_t len, uintptr_t argc, uintptr_t argv[], const aosl_sk_addr_t *addr)
+static void mpq_udp_client_on_data(void *data, size_t len, uintptr_t argc, uintptr_t argv[], const aosl_sk_addr_t *addr)
 {
   UNUSED(data);
   UNUSED(len);
@@ -1863,7 +1862,7 @@ static void mpq_client_on_data(void *data, size_t len, uintptr_t argc, uintptr_t
   UNUSED(addr);
 }
 
-static void mpq_client_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr_t argv[])
+static void mpq_udp_client_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr_t argv[])
 {
   UNUSED(argc);
   UNUSED(argv);
@@ -1873,7 +1872,7 @@ static void mpq_client_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr
   LOG_FMT("fd=%d event=%d\n", fd, event);
 }
 
-static int test_mpq_server_init(void *arg)
+static int test_mpq_udp_server_init(void *arg)
 {
   UNUSED(arg);
   int ret;
@@ -1888,19 +1887,19 @@ static int test_mpq_server_init(void *arg)
   aosl_inet_addr_from_string(&addr.sin_addr, server_ip);
   ret = aosl_bind(fd, &addr);
   EXPECT_EQ(ret, 0);
-  ret = aosl_mpq_add_dgram_socket(fd, 1400, mpq_server_on_data, mpq_server_on_event, 1, &mpq_server_res);
+  ret = aosl_mpq_add_dgram_socket(fd, 1400, mpq_udp_server_on_data, mpq_udp_server_on_event, 1, &mpq_server_res);
   EXPECT_EQ(ret, 0);
   mpq_server_res.sk = fd;
   return 0;
 }
 
-static void test_mpq_server_fini(void *arg)
+static void test_mpq_udp_server_fini(void *arg)
 {
   UNUSED(arg);
   aosl_hal_sk_close(mpq_server_res.sk);
 }
 
-static int test_mpq_client_init(void *arg)
+static int test_mpq_udp_client_init(void *arg)
 {
   UNUSED(arg);
   int ret;
@@ -1917,19 +1916,19 @@ static int test_mpq_client_init(void *arg)
 
   ret = aosl_bind_port_only(fd, AOSL_AF_INET, 0);
   EXPECT_EQ(ret, 0);
-  ret = aosl_mpq_add_dgram_socket(fd, 1400, mpq_client_on_data, mpq_client_on_event, 1, &mpq_client_res);
+  ret = aosl_mpq_add_dgram_socket(fd, 1400, mpq_udp_client_on_data, mpq_udp_client_on_event, 1, &mpq_client_res);
   EXPECT_EQ(ret, 0);
   mpq_client_res.sk = fd;
   return 0;
 }
 
-static void test_mpq_client_fini(void *arg)
+static void test_mpq_udp_client_fini(void *arg)
 {
   UNUSED(arg);
   aosl_hal_sk_close(mpq_client_res.sk);
 }
 
-static void test_mpq_client_send_func(const aosl_ts_t *queued_ts_p, aosl_refobj_t robj, uintptr_t argc,
+static void test_mpq_udp_client_send_func(const aosl_ts_t *queued_ts_p, aosl_refobj_t robj, uintptr_t argc,
                                       uintptr_t argv[])
 {
   UNUSED(queued_ts_p);
@@ -1944,17 +1943,20 @@ static void test_mpq_client_send_func(const aosl_ts_t *queued_ts_p, aosl_refobj_
   }
 }
 
-static int aosl_test_mpq_api(void)
+static int aosl_test_mpq_api_udp(void)
 {
+  memset(&mpq_server_res, 0, sizeof(mpq_server_res));
+  memset(&mpq_client_res, 0, sizeof(mpq_client_res));
+
   int priority = AOSL_THRD_PRI_DEFAULT; // default
   int stack_size = 0; // default
   int max_func_size = 10000;
-  aosl_mpq_t q_server = aosl_mpq_create(priority, stack_size, max_func_size, "udp-server", test_mpq_server_init,
-                                        test_mpq_server_fini, NULL);
+  aosl_mpq_t q_server = aosl_mpq_create(priority, stack_size, max_func_size, "udp-server",
+                  test_mpq_udp_server_init, test_mpq_udp_server_fini, NULL);
   CHECK(!aosl_mpq_invalid(q_server));
 
-  aosl_mpq_t q_client = aosl_mpq_create(priority, stack_size, max_func_size, "udp-client", test_mpq_client_init,
-                                        test_mpq_client_fini, NULL);
+  aosl_mpq_t q_client = aosl_mpq_create(priority, stack_size, max_func_size, "udp-client",
+                  test_mpq_udp_client_init, test_mpq_udp_client_fini, NULL);
   CHECK(!aosl_mpq_invalid(q_client));
 
   // client async send msg
@@ -1963,8 +1965,8 @@ static int aosl_test_mpq_api(void)
   int cnt_alls = cnt_cycs * cnt_pers * 2;
   for (int i = 0; i < cnt_cycs; i++) {
     for (int j = 0; j < cnt_pers; j++) {
-      aosl_mpq_queue(q_client, AOSL_MPQ_INVALID, AOSL_REF_INVALID, "test_mpq_client_send_func",
-                     test_mpq_client_send_func, 1, &mpq_client_res);
+      aosl_mpq_queue(q_client, AOSL_MPQ_INVALID, AOSL_REF_INVALID, "test_mpq_udp_client_send_func",
+                     test_mpq_udp_client_send_func, 1, &mpq_client_res);
     }
     aosl_msleep(100);
   }
@@ -1972,8 +1974,8 @@ static int aosl_test_mpq_api(void)
   // client sync send msg
   for (int i = 0; i < cnt_cycs; i++) {
     for (int j = 0; j < cnt_pers; j++) {
-      aosl_mpq_call(q_client, AOSL_REF_INVALID, "test_mpq_client_send_func", test_mpq_client_send_func, 1,
-                    &mpq_client_res);
+      aosl_mpq_call(q_client, AOSL_REF_INVALID, "test_mpq_client_send_func",
+                    test_mpq_udp_client_send_func, 1, &mpq_client_res);
     }
     aosl_msleep(100);
   }
@@ -1987,7 +1989,255 @@ static int aosl_test_mpq_api(void)
   aosl_mpq_destroy_wait(q_client);
   EXPECT_EQ(mpq_server_res.recv_cnt, cnt_alls);
   EXPECT_EQ(mpq_client_res.sent_cnt, cnt_alls);
-  LOG_FMT("test success");
+  LOG_FMT("mpq udp test success");
+  return 0;
+}
+
+// TCP packet checker: simple length-prefixed protocol
+// Format: [4-byte length][data]
+static isize_t mpq_tcp_check_packet(const void *data, size_t len, uintptr_t argc, uintptr_t argv[])
+{
+  UNUSED(argc);
+  UNUSED(argv);
+  
+  if (len < 4) {
+    return 0; // Need more data for length header
+  }
+  
+  const uint8_t *buf = (const uint8_t *)data;
+  uint32_t pkt_len = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+  
+  if (pkt_len > 2048) {
+    return -1; // Invalid packet length
+  }
+  
+  if (len < 4 + pkt_len) {
+    return 0; // Need more data
+  }
+  
+  return 4 + pkt_len; // Complete packet
+}
+
+static void mpq_tcp_server_on_data(void *data, size_t len, uintptr_t argc, uintptr_t argv[])
+{
+  UNUSED(argc);
+  struct test_mpq_server_res *server_res = (struct test_mpq_server_res *)argv[0];
+  
+  // Skip 4-byte length header
+  if (len < 4) {
+    LOG_FMT("TCP packet too short: %d", (int)len);
+    return;
+  }
+  char *msg = (char *)data + 4;
+  server_res->recv_cnt++;
+  if (server_res->recv_cnt % 500 == 1) {
+    LOG_FMT("TCP len=%d recv msg %s", (int)len - 4, msg);
+  }
+}
+
+static void mpq_tcp_server_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr_t argv[])
+{
+  UNUSED(argc);
+  UNUSED(argv);
+  if (event >= 0) {
+    return;
+  }
+  LOG_FMT("TCP server fd=%d event=%d\n", fd, event);
+}
+
+// TCP client callbacks
+static void mpq_tcp_client_on_data(void *data, size_t len, uintptr_t argc, uintptr_t argv[])
+{
+  UNUSED(data);
+  UNUSED(len);
+  UNUSED(argc);
+  UNUSED(argv);
+}
+
+static void mpq_tcp_client_on_event(aosl_fd_t fd, int event, uintptr_t argc, uintptr_t argv[])
+{
+  UNUSED(argc);
+  UNUSED(argv);
+  if (event >= 0) {
+    return;
+  }
+  LOG_FMT("TCP client fd=%d event=%d\n", fd, event);
+}
+
+// TCP server accepted callback
+static void mpq_tcp_server_on_accepted(aosl_accept_data_t *accept_data, size_t len, uintptr_t argc, uintptr_t argv[])
+{
+  UNUSED(len);
+  UNUSED(argc);
+  struct test_mpq_server_res *server_res = (struct test_mpq_server_res *)argv[0];
+  
+  int ret;
+  aosl_fd_t client_fd = accept_data->newsk;
+  
+  char addr_buf[64] = {0};
+  aosl_ip_sk_addr_str(&accept_data->addr, addr_buf, sizeof(addr_buf));
+  LOG_FMT("TCP server accepted connection from %s, fd=%d", addr_buf, client_fd);
+  
+  // Add the accepted socket as a stream socket with packet checker
+  ret = aosl_mpq_add_stream_socket(client_fd, 2048, mpq_tcp_check_packet,
+                                    mpq_tcp_server_on_data, mpq_tcp_server_on_event, 1, server_res);
+  if (ret != 0) {
+    LOG_FMT("Failed to add stream socket, ret=%d", ret);
+    aosl_hal_sk_close(client_fd);
+    return;
+  }
+  
+  server_res->sk = client_fd;
+}
+
+// TCP server init/fini
+static int test_mpq_tcp_server_init(void *arg)
+{
+  UNUSED(arg);
+  int ret;
+  mpq_server_res.recv_cnt = 0;
+  mpq_server_res.sk = -1;
+  
+  // Create TCP listen socket
+  int listen_fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
+  CHECK(!aosl_fd_invalid(listen_fd));
+
+  aosl_sockaddr_t addr = { 0 };
+  addr.sa_family = AOSL_AF_INET;
+  addr.sa_port = aosl_htons(server_port);
+  aosl_inet_addr_from_string(&addr.sin_addr, server_ip);
+  
+  ret = aosl_bind(listen_fd, &addr);
+  EXPECT_EQ(ret, 0);
+  
+  // Use aosl_mpq_listen to handle listening and accepting
+  ret = aosl_mpq_listen(listen_fd, 5, mpq_tcp_server_on_accepted, mpq_tcp_server_on_event, 1, &mpq_server_res);
+  EXPECT_EQ(ret, 0);
+  
+  mpq_server_res.sk = listen_fd;
+  return 0;
+}
+
+static void test_mpq_tcp_server_fini(void *arg)
+{
+  UNUSED(arg);
+  aosl_hal_sk_close(mpq_server_res.sk);
+}
+
+// TCP client init/fini
+static int test_mpq_tcp_client_init(void *arg)
+{
+  UNUSED(arg);
+  int ret;
+  mpq_client_res.sent_cnt = 0;
+  mpq_client_res.sk = -1;
+  
+  // Create TCP socket
+  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
+  CHECK(!aosl_fd_invalid(fd));
+
+  aosl_sockaddr_t addr = { 0 };
+  addr.sa_family = AOSL_AF_INET;
+  addr.sa_port = aosl_htons(server_port);
+  aosl_inet_addr_from_string(&addr.sin_addr, server_ip);
+
+  // Use aosl_mpq_connect to connect and add socket
+  ret = aosl_mpq_connect(fd, &addr, 5000, 2048, mpq_tcp_check_packet,
+                         mpq_tcp_client_on_data, mpq_tcp_client_on_event, 1, &mpq_client_res);
+  EXPECT_EQ(ret, 0);
+  
+  mpq_client_res.sk = fd;
+  return 0;
+}
+
+static void test_mpq_tcp_client_fini(void *arg)
+{
+  UNUSED(arg);
+  aosl_hal_sk_close(mpq_client_res.sk);
+}
+
+static void test_mpq_tcp_client_send_func(const aosl_ts_t *queued_ts_p, aosl_refobj_t robj, uintptr_t argc,
+                                          uintptr_t argv[])
+{
+  UNUSED(queued_ts_p);
+  UNUSED(robj);
+  UNUSED(argc);
+  struct test_mpq_client_res *client_res = (struct test_mpq_client_res *)argv[0];
+  char msg[1024] = { 0 };
+  uint8_t pkt[1028];
+  
+  sprintf(msg, "this is the %d cnt TCP client sent msg!", client_res->sent_cnt++);
+  uint32_t msg_len = sizeof(msg);
+  
+  // Write length header (big-endian)
+  pkt[0] = (msg_len >> 24) & 0xFF;
+  pkt[1] = (msg_len >> 16) & 0xFF;
+  pkt[2] = (msg_len >> 8) & 0xFF;
+  pkt[3] = msg_len & 0xFF;
+  
+  // Copy message
+  memcpy(pkt + 4, msg, msg_len);
+  
+  // Use aosl_send for TCP (no destination address needed)
+  int ret = aosl_send(client_res->sk, pkt, 4 + msg_len, 0);
+  if (client_res->sent_cnt % 500 == 1) {
+    LOG_FMT("TCP ret=%d send msg %s", ret, msg);
+  }
+}
+
+static int aosl_test_mpq_api_tcp(void)
+{
+  memset(&mpq_server_res, 0, sizeof(mpq_server_res));
+  memset(&mpq_client_res, 0, sizeof(mpq_client_res));
+
+  int priority = AOSL_THRD_PRI_DEFAULT; // default
+  int stack_size = 0; // default
+  int max_func_size = 10000;
+  
+  // Create server first (it will listen and accept)
+  aosl_mpq_t q_server = aosl_mpq_create(priority, stack_size, max_func_size, "tcp-server",
+                  test_mpq_tcp_server_init, test_mpq_tcp_server_fini, NULL);
+  CHECK(!aosl_mpq_invalid(q_server));
+  
+  // Give server time to start listening
+  aosl_msleep(100);
+
+  // Create client (it will connect)
+  aosl_mpq_t q_client = aosl_mpq_create(priority, stack_size, max_func_size, "tcp-client",
+                  test_mpq_tcp_client_init, test_mpq_tcp_client_fini, NULL);
+  CHECK(!aosl_mpq_invalid(q_client));
+
+  // client async send msg
+  int cnt_cycs = 20;
+  int cnt_pers = 50;
+  int cnt_alls = cnt_cycs * cnt_pers * 2;
+  for (int i = 0; i < cnt_cycs; i++) {
+    for (int j = 0; j < cnt_pers; j++) {
+      aosl_mpq_queue(q_client, AOSL_MPQ_INVALID, AOSL_REF_INVALID, "test_mpq_tcp_client_send_func",
+                     test_mpq_tcp_client_send_func, 1, &mpq_client_res);
+    }
+    aosl_msleep(100);
+  }
+
+  // client sync send msg
+  for (int i = 0; i < cnt_cycs; i++) {
+    for (int j = 0; j < cnt_pers; j++) {
+      aosl_mpq_call(q_client, AOSL_REF_INVALID, "test_mpq_tcp_client_send_func",
+                    test_mpq_tcp_client_send_func, 1, &mpq_client_res);
+    }
+    aosl_msleep(100);
+  }
+
+  // check cnts
+  aosl_ts_t start_ts = aosl_tick_ms();
+  while (mpq_server_res.recv_cnt < cnt_alls && (aosl_tick_ms() - start_ts) < 5000) {
+    aosl_msleep(100);
+  }
+  aosl_mpq_destroy_wait(q_client);
+  aosl_mpq_destroy_wait(q_server);
+  EXPECT_EQ(mpq_server_res.recv_cnt, cnt_alls);
+  EXPECT_EQ(mpq_client_res.sent_cnt, cnt_alls);
+  LOG_FMT("mpq tcp test success");
   return 0;
 }
 
@@ -2011,7 +2261,8 @@ static int aosl_test_mpq_max()
 
 static int aosl_test_mpq(void)
 {
-  CHECK(aosl_test_mpq_api() == 0);
+  CHECK(aosl_test_mpq_api_udp() == 0);
+  CHECK(aosl_test_mpq_api_tcp() == 0);
   //CHECK(aosl_test_mpq_max() == 0);
   LOG_FMT("test success");
   return 0;

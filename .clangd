@@ -1,0 +1,22 @@
+# aosl 专用的 clangd 配置
+CompileFlags:
+  CompilationDatabase: build
+
+# 索引配置
+Index:
+  Background: Build
+  
+# 完全禁用诊断
+Diagnostics:
+  Suppress: "*"
+  ClangTidy:
+    Remove: "*"
+  UnusedIncludes: None
+
+# 补全配置
+Completion:
+  AllScopes: Yes
+  
+# 悬停提示
+Hover:
+  ShowAKA: Yes

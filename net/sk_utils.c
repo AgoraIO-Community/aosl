@@ -598,7 +598,7 @@ static void ____target_q_add_stream_sk (const aosl_ts_t *queued_ts_p, aosl_refob
 
 __export_in_so__ int aosl_mpq_add_stream_socket_on_q (aosl_mpq_t qid, aosl_fd_t fd,
 								size_t max_pkt_size, aosl_check_packet_t chk_pkt_f,
-		aosl_dgram_sk_data_t data_f, aosl_fd_event_t event_f, uintptr_t argc, ...)
+		aosl_fd_data_t data_f, aosl_fd_event_t event_f, uintptr_t argc, ...)
 {
 	struct mp_queue *q;
 	va_list args;

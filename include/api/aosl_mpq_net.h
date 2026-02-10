@@ -100,7 +100,7 @@ extern __aosl_api__ int aosl_mpq_add_stream_socket (aosl_fd_t fd, size_t max_pkt
 													aosl_fd_data_t data_f, aosl_fd_event_t event_f, uintptr_t argc, ...);
 
 extern __aosl_api__ int aosl_mpq_add_stream_socket_on_q (aosl_mpq_t qid, aosl_fd_t fd, size_t max_pkt_size, aosl_check_packet_t chk_pkt_f,
-																	aosl_dgram_sk_data_t data_f, aosl_fd_event_t event_f, uintptr_t argc, ...);
+																	aosl_fd_data_t data_f, aosl_fd_event_t event_f, uintptr_t argc, ...);
 
 extern __aosl_api__ isize_t aosl_send (aosl_fd_t sockfd, const void *buf, size_t len, int flags);
 extern __aosl_api__ isize_t aosl_sendto (aosl_fd_t sockfd, const void *buf, size_t len, int flags, const aosl_sockaddr_t *dest_addr);
