@@ -188,7 +188,8 @@ static struct pool_entry *__pool_create_add_mpq_locked (struct mpq_pool *qp)
 	struct mp_queue *q;
 	struct pool_entry *entry;
 
-	snprintf (qp->q_name, sizeof(qp->q_name), "%s.%d", qp->qp_name, qp->q_count);
+	// Limit the print length of qp_name to prevent compiler errors
+	snprintf (qp->q_name, sizeof(qp->q_name), "%.11s.%d", qp->qp_name, qp->q_count);
 	q = __pool_create_mpq (qp, qp->q_name);
 	if (q == NULL) {
 		int err = aosl_errno;
