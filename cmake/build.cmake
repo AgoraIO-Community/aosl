@@ -4,20 +4,31 @@ file(GLOB   AOSL_PLATFORM_SRCS       "${AOSL_DIR}/platform/src/${CONFIG_PLATFORM
 list(APPEND AOSL_ADD_SOURCES          ${AOSL_PLATFORM_SRCS})
 
 ############## Add definitions ###############
+# Define AOSL config options with default values
+# Format: CONFIG_NAME=default_value
+# Can be overridden via cmake -DCONFIG_AOSL_IPV6=n etc.
 set(AOSL_CONFIG_LIST
     CONFIG_AOSL_IPV6=y
-    #CONFIG_AOSL_MEM_STAT=y
-    #CONFIG_AOSL_MEM_DUMP=y
+    CONFIG_AOSL_MEM_STAT=n
+    CONFIG_AOSL_MEM_DUMP=n
 )
-foreach(config ${AOSL_CONFIG_LIST})
-    string(REPLACE "=" ";" parts ${config})
-    list(GET parts 0 key)
-    list(GET parts 1 val)
-    # Set CMake variable
-    set(${key} ${val})
-    # Add to AOSL_ADD_DEFINITIONS
-    if (NOT val STREQUAL "n")
-        list(APPEND AOSL_ADD_DEFINITIONS "-D${key}=${val}")
+
+# Parse and apply config list
+foreach(config_entry ${AOSL_CONFIG_LIST})
+    string(REPLACE "=" ";" parts ${config_entry})
+    list(GET parts 0 config_name)
+    list(GET parts 1 default_value)
+    
+    # Use command line value if defined, otherwise use default
+    if(NOT DEFINED ${config_name})
+        set(${config_name} ${default_value})
+    endif()
+    
+    # Add to definitions if not disabled
+    set(val ${${config_name}})
+    message(STATUS "AOSL Config: ${config_name} = ${val}")
+    if(NOT val STREQUAL "n")
+        list(APPEND AOSL_ADD_DEFINITIONS "-D${config_name}=${val}")
     endif()
 endforeach()
 

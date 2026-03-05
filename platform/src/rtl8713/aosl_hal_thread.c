@@ -11,7 +11,6 @@
 #include <hal/aosl_hal_thread.h>
 #include <hal/aosl_hal_atomic.h>
 
-
 /**
  * @brief Thread priority definition
  */
@@ -280,4 +279,12 @@ int aosl_hal_sem_timedwait(aosl_sem_t sem, intptr_t timeout_ms)
 		return 0;
 	}
 	return -1;
+}
+
+int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex)
+{
+	// Empty implementation for rtl8713 platform
+	// This platform does not support static mutex initialization
+	(void)mutex;
+	return 0;
 }

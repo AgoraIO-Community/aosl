@@ -30,6 +30,7 @@ endif()
 if (NOT DEFINED CONFIG_PLATFORM)
     set(CONFIG_PLATFORM "linux")
 endif()
+message(STATUS "CONFIG_PLATFORM:${CONFIG_PLATFORM}")
 # Check if platform directory exists
 if(NOT EXISTS "${AOSL_DIR}/platform/src/${CONFIG_PLATFORM}")
     message(FATAL_ERROR "Platform '${CONFIG_PLATFORM}' not found in ${AOSL_DIR}/platform/src/")

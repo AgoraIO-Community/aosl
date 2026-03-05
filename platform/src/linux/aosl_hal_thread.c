@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/time.h>
@@ -9,6 +10,10 @@
 #include <api/aosl_log.h>
 #include <api/aosl_defs.h>
 #include <hal/aosl_hal_thread.h>
+
+// Verify that AOSL_STATIC_MUTEX_SIZE is large enough for pthread_mutex_t
+aosl_static_assert(sizeof(pthread_mutex_t) <= AOSL_STATIC_MUTEX_SIZE, 
+                   static_mutex_size_check);
 
 int aosl_hal_thread_create(aosl_thread_t *thread, aosl_thread_param_t *param,
 													 void *(*entry)(void *), void *arg)
@@ -157,6 +162,19 @@ int aosl_hal_mutex_trylock(aosl_mutex_t mutex)
 int aosl_hal_mutex_unlock(aosl_mutex_t mutex)
 {
 	return pthread_mutex_unlock((pthread_mutex_t *)mutex);
+}
+
+int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex)
+{
+	if (!mutex) {
+		return -1;
+	}
+
+	// Initialize with PTHREAD_MUTEX_INITIALIZER and copy to opaque array
+	pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+	memcpy(mutex->opaque, &init_mutex, sizeof(pthread_mutex_t));
+	
+	return 0;
 }
 
 aosl_cond_t aosl_hal_cond_create(void)

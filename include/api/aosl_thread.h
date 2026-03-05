@@ -36,6 +36,31 @@ extern __aosl_api__ void aosl_lock_unlock (aosl_lock_t lock);
 extern __aosl_api__ void aosl_lock_destroy (aosl_lock_t lock);
 
 
+/**
+ * @brief Static lock type for static declaration
+ * This type can be statically declared and initialized at compile time.
+ */
+typedef struct {
+	aosl_static_mutex_t hal_mutex;  /**< HAL layer static mutex */
+	intptr_t state;                 /**< Atomic initialization state */
+} aosl_static_lock_t;
+
+/**
+ * @brief Static lock initializer macro
+ * Use this macro to initialize a static lock at compile time:
+ * static aosl_static_lock_t my_lock = AOSL_STATIC_LOCK_INIT;
+ */
+#define AOSL_STATIC_LOCK_INIT { \
+	.hal_mutex = AOSL_STATIC_MUTEX_INIT, \
+	.state = 0 \
+}
+
+extern __aosl_api__ int aosl_static_lock_init (aosl_static_lock_t *lock);
+extern __aosl_api__ int aosl_static_lock_lock (aosl_static_lock_t *lock);
+extern __aosl_api__ int aosl_static_lock_trylock (aosl_static_lock_t *lock);
+extern __aosl_api__ int aosl_static_lock_unlock (aosl_static_lock_t *lock);
+
+
 typedef void *aosl_rwlock_t;
 
 extern __aosl_api__ aosl_rwlock_t aosl_rwlock_create (void);

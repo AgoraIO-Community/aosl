@@ -276,6 +276,13 @@ int aosl_hal_mutex_unlock(aosl_mutex_t mutex)
   return pthread_mutex_unlock((pthread_mutex_t *)mutex);
 }
 
+int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex)
+{
+  // Empty implementation for ipro7 platform
+  // This platform does not support static mutex initialization
+  return 0;
+}
+
 aosl_cond_t aosl_hal_cond_create(void)
 {
   pthread_cond_t *n_cond = aosl_calloc(1, sizeof(pthread_cond_t));

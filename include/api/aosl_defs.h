@@ -14,8 +14,20 @@
 #define aosl_stringify_1(x) #x
 #define aosl_stringify(x) aosl_stringify_1(x)
 
+/**
+ * @brief Compile-time assertion macro (C99 compatible)
+ * 
+ * This macro provides compile-time assertion functionality that works with C99.
+ * If the condition is false, compilation will fail with an error about negative array size.
+ * 
+ * Usage: aosl_static_assert(sizeof(int) == 4, int_size_check);
+ * 
+ * @param condition The condition to check at compile time
+ * @param name A unique identifier for this assertion (must be a valid C identifier)
+ */
+#define aosl_static_assert(condition, name) \
+	typedef char aosl_static_assert_##name[(condition) ? 1 : -1]
 
-#ifndef __MAKERCORE_ASSEMBLY__
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,7 +105,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __MAKERCORE_ASSEMBLY__ */
 
 #endif /* __AOSL_DEFS_H__ */

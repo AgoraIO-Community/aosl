@@ -225,3 +225,10 @@ int aosl_hal_sem_timedwait(aosl_sem_t sem, intptr_t timeout_ms)
   ret = SCI_GetSemaphore(sem_ptr, wait_option);
   return (ret == SCI_SUCCESS) ? 0 : -1;
 }
+
+int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex)
+{
+  // Empty implementation for platforms that don't support static mutex
+  (void)mutex;
+  return 0;
+}

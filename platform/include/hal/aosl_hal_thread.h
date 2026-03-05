@@ -106,6 +106,40 @@ aosl_thread_t aosl_hal_thread_self(void);
 typedef void* aosl_mutex_t;
 
 /**
+ * @brief static mutex size in bytes
+ * Large enough to hold platform-specific mutex data
+ * Linux: pthread_mutex_t (~40 bytes)
+ * FreeRTOS: StaticSemaphore_t (~80 bytes)
+ */
+#define AOSL_STATIC_MUTEX_SIZE 128
+
+/**
+ * @brief static mutex type with opaque array
+ * Contains platform-specific mutex data in an opaque array
+ */
+typedef struct {
+    uint8_t opaque[AOSL_STATIC_MUTEX_SIZE];
+} aosl_static_mutex_t;
+
+/**
+ * @brief platform-specific static mutex initializer macro
+ * Each platform defines this macro in their implementation
+ */
+#ifndef AOSL_STATIC_MUTEX_INIT
+#define AOSL_STATIC_MUTEX_INIT { .opaque = { 0 } }
+#endif
+
+/**
+ * @brief initialize a static mutex
+ * Note: This function does not guarantee thread safety.
+ * The caller must ensure no concurrent calls occur.
+ * 
+ * @param [in] mutex pointer to static mutex
+ * @return 0 on success, < 0 on error
+ */
+int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex);
+
+/**
  * @brief create a new mutex
  * @return mutex handle, or NULL on error
  */

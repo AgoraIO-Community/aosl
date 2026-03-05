@@ -77,6 +77,26 @@ __export_in_so__ void aosl_lock_destroy (aosl_lock_t lock)
 	aosl_free (lk);
 }
 
+__export_in_so__ int aosl_static_lock_init (aosl_static_lock_t *lock)
+{
+	return_err (k_static_lock_init ((k_static_lock_t *)lock));
+}
+
+__export_in_so__ int aosl_static_lock_lock (aosl_static_lock_t *lock)
+{
+	return_err (k_static_lock_lock ((k_static_lock_t *)lock));
+}
+
+__export_in_so__ int aosl_static_lock_trylock (aosl_static_lock_t *lock)
+{
+	return_err (k_static_lock_trylock ((k_static_lock_t *)lock));
+}
+
+__export_in_so__ int aosl_static_lock_unlock (aosl_static_lock_t *lock)
+{
+	return_err (k_static_lock_unlock ((k_static_lock_t *)lock));
+}
+
 __export_in_so__ aosl_rwlock_t aosl_rwlock_create (void)
 {
 	k_rwlock_t *rw = (k_rwlock_t *)aosl_malloc (sizeof (k_rwlock_t));

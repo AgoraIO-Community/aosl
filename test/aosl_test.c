@@ -25,6 +25,7 @@
 #include "api/aosl_mpq.h"
 #include "api/aosl_socket.h"
 #include "api/aosl_mpq_net.h"
+#include "api/aosl_thread.h"
 
 #define UNUSED(expr) (void)(expr)
 #define CAST_INT64(val)  ((long long)val)
@@ -1396,6 +1397,119 @@ static int aosl_test_hal_thread_sem_maxcnt(void)
 }
 #endif
 
+// Shared data structure for static lock testing
+struct static_lock_test_data {
+  aosl_static_lock_t static_lock;
+  int counter;
+};
+
+// Thread function for testing static lock contention
+static void *thread_entry_static_lock(void *arg)
+{
+  struct static_lock_test_data *data = (struct static_lock_test_data *)arg;
+  
+  for (int i = 0; i < 100; i++) {
+    aosl_static_lock_lock(&data->static_lock);
+    data->counter++;
+    aosl_static_lock_unlock(&data->static_lock);
+  }
+  
+  LOG_FMT("static lock thread finished, counter=%d", data->counter);
+  return NULL;
+}
+
+// Test: Basic static lock operations
+static int aosl_test_api_static_lock_basic(void)
+{
+  int ret;
+  aosl_static_lock_t static_lock = AOSL_STATIC_LOCK_INIT;
+  
+  LOG_FMT("Test: Basic static lock operations");
+  
+  // Test static lock initialization
+  ret = aosl_static_lock_init(&static_lock);
+  CHECK_FMT(ret == 0, "static_lock_init returned %d", ret);
+  
+  // Test lock operation
+  ret = aosl_static_lock_lock(&static_lock);
+  CHECK_FMT(ret == 0, "static_lock_lock returned %d", ret);
+  
+  // Test trylock operation (should fail because already locked)
+  ret = aosl_static_lock_trylock(&static_lock);
+  if (ret == 0) {
+    LOG_FMT("static_lock_trylock should have failed but succeeded");
+    aosl_static_lock_unlock(&static_lock);
+    return -1;
+  }
+  
+  // Test unlock operation
+  ret = aosl_static_lock_unlock(&static_lock);
+  CHECK_FMT(ret == 0, "static_lock_unlock returned %d", ret);
+  
+  // Test trylock operation (should succeed now)
+  ret = aosl_static_lock_trylock(&static_lock);
+  CHECK_FMT(ret == 0, "static_lock_trylock returned %d", ret);
+  
+  // Final unlock
+  ret = aosl_static_lock_unlock(&static_lock);
+  CHECK_FMT(ret == 0, "final static_lock_unlock returned %d", ret);
+  
+  LOG_FMT("test success");
+  return 0;
+}
+
+// Test: Multi-thread static lock contention
+static int aosl_test_api_static_lock_contention(void)
+{
+  int ret;
+  struct static_lock_test_data test_data = {
+    .static_lock = AOSL_STATIC_LOCK_INIT,
+    .counter = 0
+  };
+  aosl_thread_t threads[3] = {0};
+  aosl_thread_param_t param = {0};
+  
+  LOG_FMT("Test: Multi-thread static lock contention");
+  
+  for (int i = 0; i < 3; i++) {
+    param.name = "test-static-lock";
+    param.priority = AOSL_THRD_PRI_DEFAULT;
+    ret = aosl_hal_thread_create(&threads[i], &param, thread_entry_static_lock, &test_data);
+    if (ret != 0) {
+      LOG_FMT("thread_create[%d] returned %d", i, ret);
+      for (int j = 0; j < i; j++) {
+        aosl_hal_thread_join(threads[j], NULL);
+        aosl_hal_thread_destroy(threads[j]);
+      }
+      return -1;
+    }
+  }
+  
+  for (int i = 0; i < 3; i++) {
+    ret = aosl_hal_thread_join(threads[i], NULL);
+    if (ret != 0) {
+      LOG_FMT("thread_join[%d] returned %d", i, ret);
+    }
+    aosl_hal_thread_destroy(threads[i]);
+  }
+  
+  // Add delay to ensure all threads complete (for platforms with empty join implementation)
+  aosl_hal_msleep(200);
+  
+  CHECK_FMT(test_data.counter == 300, "counter=%d, expected 300", test_data.counter);
+  
+  LOG_FMT("test success, final counter=%d", test_data.counter);
+  return 0;
+}
+
+static int aosl_test_api_static_lock(void)
+{
+  CHECK(aosl_test_api_static_lock_basic() == 0);
+  CHECK(aosl_test_api_static_lock_contention() == 0);
+  LOG_FMT("test success");
+  return 0;
+}
+
 static int aosl_test_hal_thread(void)
 {
   CHECK(aosl_test_hal_thread_basic() == 0);
@@ -1414,6 +1528,7 @@ static int aosl_test_hal_thread(void)
   CHECK(aosl_test_hal_thread_sem_timedwait() == 0);
   CHECK(aosl_test_hal_thread_sem_maxcnt() == 0);
 #endif
+  CHECK(aosl_test_api_static_lock() == 0);
   LOG_FMT("test success");
   return 0;
 }

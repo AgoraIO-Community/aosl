@@ -13,6 +13,8 @@
 #include <api/aosl_types.h>
 #include <kernel/rwlock.h>
 #include <hal/aosl_hal_thread.h>
+#include <hal/aosl_hal_atomic.h>
+#include <api/aosl_thread.h>
 
 #define THREAD_STACK_SIZE (16 << 10)
 #define THREAD_NAME_LEN 16
@@ -77,6 +79,30 @@ typedef struct {
 
 typedef k_sync_t k_event_t;
 
+/**
+ * @brief Static lock initialization states
+ */
+typedef enum {
+	K_STATIC_LOCK_UNINIT = 0,      /**< Uninitialized state */
+	K_STATIC_LOCK_INITIALIZING,    /**< Initialization in progress */
+	K_STATIC_LOCK_INITIALIZED      /**< Initialized state */
+} k_static_lock_state_t;
+
+/**
+ * @brief Kernel layer static lock type
+ * This structure layout must match aosl_static_lock_t from API layer
+ */
+typedef aosl_static_lock_t k_static_lock_t;
+
+/**
+ * @brief Static lock initializer macro
+ * Use this macro to initialize a static lock at compile time:
+ * static k_static_lock_t my_lock = K_STATIC_LOCK_INIT;
+ */
+#define K_STATIC_LOCK_INIT { \
+	.hal_mutex = AOSL_STATIC_MUTEX_INIT, \
+	.state = K_STATIC_LOCK_UNINIT \
+}
 
 typedef int k_tls_key_t;
 extern void rb_tls_init (void);
@@ -92,6 +118,11 @@ extern void k_lock_lock (k_lock_t *lk);
 extern int k_lock_trylock (k_lock_t *lk);
 extern void k_lock_unlock (k_lock_t *lk);
 extern void k_lock_destroy (k_lock_t *lk);
+
+extern int k_static_lock_init (k_static_lock_t *lock);
+extern int k_static_lock_lock (k_static_lock_t *lock);
+extern int k_static_lock_trylock (k_static_lock_t *lock);
+extern int k_static_lock_unlock (k_static_lock_t *lock);
 
 extern void k_raw_rwlock_init (k_raw_rwlock_t *rw);
 extern void k_raw_rwlock_rdlock (k_raw_rwlock_t *rw);
