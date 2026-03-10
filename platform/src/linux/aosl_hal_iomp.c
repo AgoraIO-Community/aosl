@@ -75,7 +75,11 @@ int aosl_hal_epoll_wait(int epfd, aosl_poll_event_t *evlist, int maxevents, int 
 
 	err = epoll_wait(epfd, n_events, maxevents, timeout_ms);
 	if (err < 0) {
-		err = aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		err = aosl_hal_errno_convert(orig_errno);
+		if (err == AOSL_HAL_RET_EHAL) {
+			AOSL_LOG_ERR("epoll_wait errno convert: %d -> %d", orig_errno, err);
+		}
 		goto __tag_out;
 	}
 
@@ -115,7 +119,11 @@ int aosl_hal_poll(aosl_poll_event_t fds[], int nfds, int timeout_ms)
 
 	err = poll(n_fds, nfds, timeout_ms);
 	if (err < 0) {
-		err = aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		err = aosl_hal_errno_convert(orig_errno);
+		if (err == AOSL_HAL_RET_EHAL) {
+			AOSL_LOG_ERR("poll errno convert: %d -> %d", orig_errno, err);
+		}
 		return err;
 	}
 
@@ -178,7 +186,11 @@ int aosl_hal_select(int nfds, fd_set_t readfds, fd_set_t writefds, fd_set_t exce
 
 	err = select(nfds, (fd_set *)readfds, (fd_set *)writefds, (fd_set *)exceptfds, ptv);
 	if (err < 0) {
-		err = aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		err = aosl_hal_errno_convert(orig_errno);
+		if (err == AOSL_HAL_RET_EHAL) {
+			AOSL_LOG_ERR("select errno convert: %d -> %d", orig_errno, err);
+		}
 		return err;
 	}
 

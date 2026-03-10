@@ -53,7 +53,11 @@ int aosl_hal_select(int nfds, fd_set_t readfds, fd_set_t writefds, fd_set_t exce
 
   err = select(nfds, (fd_set *)readfds, (fd_set *)writefds, (fd_set *)exceptfds, ptv);
   if (err < 0) {
-    err = aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    err = aosl_hal_errno_convert(orig_errno);
+    if (err == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("select errno convert: %d -> %d", orig_errno, err);
+    }
     return err;
   }
 

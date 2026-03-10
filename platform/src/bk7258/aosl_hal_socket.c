@@ -139,7 +139,10 @@ int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr)
   socklen_t addrlen = get_addrlen(n_addr->sa_family);
   int ret = bind(sockfd, n_addr, addrlen);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    AOSL_LOG_ERR("bind errno convert: %d -> %d", orig_errno, ret);
+    return ret;
   }
   return 0;
 }
@@ -152,7 +155,10 @@ int aosl_hal_sk_bind_device(int sockfd, const char *if_name)
 	strncpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name) - 1);
 	int ret = lwip_setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr));
 	if (ret < 0) {
-		return aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		ret = aosl_hal_errno_convert(orig_errno);
+		AOSL_LOG_ERR("setsockopt(SO_BINDTODEVICE) errno convert: %d -> %d", orig_errno, ret);
+		return ret;
 	}
 	return 0;
 }
@@ -161,7 +167,12 @@ int aosl_hal_sk_listen(int sockfd, int backlog)
 {
   int ret = listen(sockfd, backlog);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("listen errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   }
   return 0;
 }
@@ -177,7 +188,12 @@ int aosl_hal_sk_accept(int sockfd, aosl_sockaddr_t *addr)
   socklen_t addrlen = sizeof(com_addr);
   int ret = accept(sockfd, n_addr, &addrlen);
   if (ret < 0) {
-    ret = aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("accept errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   } else {
     conv_addr_to_aosl(n_addr, addr);
   }
@@ -196,7 +212,12 @@ int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr)
   socklen_t addrlen = get_addrlen(n_addr->sa_family);
   int ret = connect(sockfd, n_addr, addrlen);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("connect errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   }
   return 0;
 }
@@ -210,7 +231,12 @@ isize_t aosl_hal_sk_send(int sockfd, const void* buf, size_t len, int flags)
 {
   int ret = send(sockfd, buf, len, flags);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("send errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   }
   return ret;
 }
@@ -219,7 +245,12 @@ isize_t aosl_hal_sk_recv(int sockfd, void* buf, size_t len, int flags)
 {
   int ret = recv(sockfd, buf, len, flags);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("recv errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   }
   return ret;
 }
@@ -237,7 +268,12 @@ int aosl_hal_sk_sendto(int sockfd, const void *buffer, size_t length,
   socklen_t addrlen = get_addrlen(n_dest_addr->sa_family);
   int ret = sendto(sockfd, buffer, length, flags, n_dest_addr, addrlen);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("sendto errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   }
   return ret;
 }
@@ -254,7 +290,12 @@ int aosl_hal_sk_recvfrom(int sockfd, void *buffer, size_t length,
   socklen_t addrlen = sizeof(com_addr);
   int ret = recvfrom(sockfd, buffer, length, flags, n_src_addr, &addrlen);
   if (ret < 0) {
-    ret = aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("recvfrom errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   } else {
     conv_addr_to_aosl(n_src_addr, src_addr);
   }
@@ -265,7 +306,12 @@ int aosl_hal_sk_read(int sockfd, void *buf, size_t count)
 {
   int ret = read(sockfd, buf, count);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("read errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   }
   return ret;
 }
@@ -274,7 +320,12 @@ int aosl_hal_sk_write(int sockfd, const void *buf, size_t count)
 {
   int ret = write(sockfd, buf, count);
   if (ret < 0) {
-    return aosl_hal_errno_convert(errno);
+    int orig_errno = errno;
+    ret = aosl_hal_errno_convert(orig_errno);
+    if (ret == AOSL_HAL_RET_EHAL) {
+      AOSL_LOG_ERR("write errno convert: %d -> %d", orig_errno, ret);
+    }
+    return ret;
   }
   return ret;
 }

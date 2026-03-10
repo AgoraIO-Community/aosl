@@ -2140,7 +2140,6 @@ static void mpq_tcp_server_on_data(void *data, size_t len, uintptr_t argc, uintp
   
   // Skip 4-byte length header
   if (len < 4) {
-    LOG_FMT("TCP packet too short: %d", (int)len);
     return;
   }
   char *msg = (char *)data + 4;

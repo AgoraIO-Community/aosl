@@ -146,7 +146,10 @@ int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t *addr)
 	socklen_t addrlen = get_addrlen(n_addr->sa_family);
 	int ret = lwip_bind(sockfd, n_addr, addrlen);
 	if (ret < 0) {
-		return aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		ret = aosl_hal_errno_convert(orig_errno);
+		AOSL_LOG_ERR("bind errno convert: %d -> %d", orig_errno, ret);
+		return ret;
 	}
 	return 0;
 }
@@ -158,7 +161,10 @@ int aosl_hal_sk_bind_device(int sockfd, const char *if_name)
 	strncpy(ifr.ifr_name, if_name, sizeof(ifr.ifr_name) - 1);
 	int ret = lwip_setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr));
 	if (ret < 0) {
-		return aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		ret = aosl_hal_errno_convert(orig_errno);
+		AOSL_LOG_ERR("setsockopt(SO_BINDTODEVICE) errno convert: %d -> %d", orig_errno, ret);
+		return ret;
 	}
 	return 0;
 }
@@ -167,7 +173,12 @@ int aosl_hal_sk_listen(int sockfd, int backlog)
 {
 	int ret = lwip_listen(sockfd, backlog);
 	if (ret < 0) {
-		return aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		ret = aosl_hal_errno_convert(orig_errno);
+		if (ret == AOSL_HAL_RET_EHAL) {
+			AOSL_LOG_ERR("listen errno convert: %d -> %d", orig_errno, ret);
+		}
+		return ret;
 	}
 	return 0;
 }
@@ -183,7 +194,12 @@ int aosl_hal_sk_accept(int sockfd, aosl_sockaddr_t *addr)
 	socklen_t addrlen = sizeof(com_addr);
 	int ret = lwip_accept(sockfd, n_addr, &addrlen);
 	if (ret < 0) {
-		return aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		ret = aosl_hal_errno_convert(orig_errno);
+		if (ret == AOSL_HAL_RET_EHAL) {
+			AOSL_LOG_ERR("accept errno convert: %d -> %d", orig_errno, ret);
+		}
+		return ret;
 	} else if (addr) {
 		conv_addr_to_aosl(n_addr, addr);
 	}
@@ -205,7 +221,12 @@ int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr)
 	socklen_t addrlen = get_addrlen(n_addr->sa_family);
 	int ret = lwip_connect(sockfd, n_addr, addrlen);
 	if (ret < 0) {
-		return aosl_hal_errno_convert(errno);
+		int orig_errno = errno;
+		ret = aosl_hal_errno_convert(orig_errno);
+		if (ret == AOSL_HAL_RET_EHAL) {
+			AOSL_LOG_ERR("connect errno convert: %d -> %d", orig_errno, ret);
+		}
+		return ret;
 	}
 	return 0;
 }

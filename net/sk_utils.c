@@ -651,7 +651,6 @@ static isize_t ____send (struct iofd *f, const void *buf, size_t len, int flags)
 	}
 
 	err = aosl_hal_sk_send (iofd_fobj (f)->fd, buf, len, flags);
-	f->flags |= AOSL_POLLOUT;
 	if (err <= 0) {
 		aosl_hal_set_error((int)err);
 		return -aosl_errno;
@@ -742,7 +741,6 @@ static isize_t ____sendto (struct iofd *f, const void *buf, size_t len, int flag
 		goto __queue_it;
 	}
 	err = aosl_hal_sk_sendto (iofd_fobj (f)->fd, buf, len, flags, dest_addr);
-	f->flags |= AOSL_POLLOUT;
 	if (err <= 0) {
 		aosl_hal_set_error(err);
 		return -aosl_errno;
