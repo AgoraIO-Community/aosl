@@ -18,6 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Project control options
 option(AOSL_DECLARE_PROJECT "Whether declare as Standalone Project" ON)
+option(AOSL_COMPILE_TEST "Whether compile aosl_test" ON)
 
 # Library root directory configuration
 # Set library root directory (can be overridden by setting AOSL_DIR or using -DAOSL_DIR=...)

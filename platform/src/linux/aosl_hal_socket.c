@@ -15,7 +15,7 @@
 #include <api/aosl_route.h>
 #include <api/aosl_log.h>
 
-static inline int conv_domain_to_os(enum aosl_socket_domain domain)
+static int conv_domain_to_os(enum aosl_socket_domain domain)
 {
 	switch (domain) {
 		case AOSL_AF_UNSPEC:
@@ -29,7 +29,7 @@ static inline int conv_domain_to_os(enum aosl_socket_domain domain)
 	}
 }
 
-static inline int conv_type_to_os(enum aosl_socket_type type)
+static int conv_type_to_os(enum aosl_socket_type type)
 {
 	switch (type) {
 		case AOSL_SOCK_STREAM:
@@ -41,7 +41,7 @@ static inline int conv_type_to_os(enum aosl_socket_type type)
 	}
 }
 
-static inline int conv_proto_to_os(enum aosl_socket_proto proto)
+static int conv_proto_to_os(enum aosl_socket_proto proto)
 {
 	switch (proto) {
 	case AOSL_IPPROTO_TCP:
@@ -55,7 +55,7 @@ static inline int conv_proto_to_os(enum aosl_socket_proto proto)
 	}
 }
 
-static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockaddr *os_addr)
+static void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockaddr *os_addr)
 {
 	switch (ah_addr->sa_family) {
 		case AOSL_AF_INET: {
@@ -79,7 +79,7 @@ static inline void conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockad
 	}
 }
 
-static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockaddr_t *ah_addr)
+static void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockaddr_t *ah_addr)
 {
 	if (!os_addr || !ah_addr) {
 		return;
@@ -106,7 +106,7 @@ static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockad
 	}
 }
 
-static inline int get_addrlen(int af)
+static int get_addrlen(int af)
 {
 	switch (af) {
 		case AF_INET:
@@ -133,8 +133,9 @@ int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr)
 {
 	struct sockaddr_in6 com_addr = {0};
 	struct sockaddr *n_addr = (struct sockaddr *)&com_addr;
+	int af = conv_domain_to_os(addr->sa_family);
+	socklen_t addrlen = get_addrlen(af);
 	conv_addr_to_os(addr, n_addr);
-	socklen_t addrlen = get_addrlen(n_addr->sa_family);
 	int ret = bind(sockfd, n_addr, addrlen);
 	if (ret < 0) {
 		int orig_errno = errno;
@@ -196,8 +197,9 @@ int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr)
 {
 	struct sockaddr_in6 com_addr = {0};
 	struct sockaddr *n_addr = (struct sockaddr *)&com_addr;
+	int af = conv_domain_to_os(addr->sa_family);
+	socklen_t addrlen = get_addrlen(af);
 	conv_addr_to_os(addr, n_addr);
-	socklen_t addrlen = get_addrlen(n_addr->sa_family);
 	int ret = connect(sockfd, n_addr, addrlen);
 	if (ret < 0) {
 		int orig_errno = errno;
@@ -248,8 +250,9 @@ int aosl_hal_sk_sendto(int sockfd, const void *buffer, size_t length,
 {
 	struct sockaddr_in6 com_addr = {0};
 	struct sockaddr *n_dest_addr = (struct sockaddr *)&com_addr;
+	int af = conv_domain_to_os(dest_addr->sa_family);
+	socklen_t addrlen = get_addrlen(af);
 	conv_addr_to_os(dest_addr, n_dest_addr);
-	socklen_t addrlen = get_addrlen(n_dest_addr->sa_family);
 	int ret = sendto(sockfd, buffer, length, flags, n_dest_addr, addrlen);
 	if (ret < 0) {
 		int orig_errno = errno;

@@ -99,7 +99,7 @@ if (AOSL_DECLARE_PROJECT)
 endif()
 
 ############## Compile test bin ############
-if (AOSL_DECLARE_PROJECT)
+if (AOSL_DECLARE_PROJECT AND AOSL_COMPILE_TEST)
     add_executable(aosl_test ${AOSL_DIR}/test/aosl_test_main.c)
     target_include_directories(aosl_test PRIVATE ${AOSL_ADD_INCLUDES_PUBLIC})
     target_link_libraries(aosl_test PRIVATE aosl "pthread" "dl" "rt" "m")

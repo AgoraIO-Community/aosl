@@ -60,7 +60,7 @@ static int get_local_ip_for_loopback(uint32_t *local_ip)
   return 0;
 }
 
-static inline int conv_domain_to_os(enum aosl_socket_domain domain)
+static int conv_domain_to_os(enum aosl_socket_domain domain)
 {
   switch (domain) {
     case AOSL_AF_UNSPEC:
@@ -74,7 +74,7 @@ static inline int conv_domain_to_os(enum aosl_socket_domain domain)
   }
 }
 
-static inline int conv_type_to_os(enum aosl_socket_type type)
+static int conv_type_to_os(enum aosl_socket_type type)
 {
   switch (type) {
     case AOSL_SOCK_STREAM:
@@ -86,7 +86,7 @@ static inline int conv_type_to_os(enum aosl_socket_type type)
   }
 }
 
-static inline int conv_proto_to_os(enum aosl_socket_proto proto)
+static int conv_proto_to_os(enum aosl_socket_proto proto)
 {
 	switch (proto) {
 	case AOSL_IPPROTO_TCP:
@@ -100,7 +100,7 @@ static inline int conv_proto_to_os(enum aosl_socket_proto proto)
 	}
 }
 
-static inline int conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockaddr *os_addr)
+static int conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockaddr *os_addr)
 {
   if (NULL == ah_addr || NULL == os_addr) {
     aosl_log(AOSL_LOG_ERROR, "[AOSL_HAL] conv_addr_to_os: NULL pointer (ah_addr=%p, os_addr=%p)", ah_addr, os_addr);
@@ -169,7 +169,7 @@ static inline int translate_loopback_addr(struct sockaddr *os_addr, bool for_bin
   return 0;
 }
 
-static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockaddr_t *ah_addr)
+static void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockaddr_t *ah_addr)
 {
   if (NULL == os_addr || NULL == ah_addr) {
     return;
@@ -199,7 +199,7 @@ static inline void conv_addr_to_aosl(const struct sockaddr *os_addr, aosl_sockad
   }
 }
 
-static inline int get_addrlen(int af)
+static int get_addrlen(int af)
 {
   switch (af) {
     case AF_INET:

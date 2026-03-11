@@ -80,7 +80,7 @@ static inline void conv_addr_to_sci(const aosl_sockaddr_t *ah_addr, struct sci_s
   }
 }
 
-static inline void conv_addr_to_aosl(const struct sci_sockaddr *sci_addr, aosl_sockaddr_t *ah_addr)
+static void conv_addr_to_aosl(const struct sci_sockaddr *sci_addr, aosl_sockaddr_t *ah_addr)
 {
   switch (sci_addr->family) {
     case AF_INET: {
