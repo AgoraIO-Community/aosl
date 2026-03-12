@@ -4,10 +4,10 @@ The API header file path for aosl: include/api
 
 # 2. Porting Guide
 # 2.1 HAL Layer Definition
-When porting to a chip platform, you only need to focus on the platform directory, where:
-platform/include/hal:     HAL layer interface definitions
-platform/src/include/hal: HAL layer configuration
-platform/src/${platform}: HAL layer implementation code
+When porting to a chip platform, you only need to focus on the platform directory, where:  
+platform/include/hal:     HAL layer interface definitions  
+platform/src/include/hal: HAL layer configuration  
+platform/src/${platform}: HAL layer implementation code  
 
 # 2.2 HAL Layer Implementation
 Implement the interfaces defined in the header files in platform/include/hal.
