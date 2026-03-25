@@ -21,15 +21,48 @@ extern "C" {
 typedef uint64_t aosl_ts_t;
 
 
+/**
+ * @brief Get the monotonic tick count in platform-native resolution.
+ * @return  the current tick value
+ **/
 extern __aosl_api__ aosl_ts_t aosl_tick_now (void);
+
+/**
+ * @brief Get the monotonic tick count in milliseconds.
+ * @return  the current tick in milliseconds
+ **/
 extern __aosl_api__ aosl_ts_t aosl_tick_ms (void);
+
+/**
+ * @brief Get the monotonic tick count in microseconds.
+ * @return  the current tick in microseconds
+ **/
 extern __aosl_api__ aosl_ts_t aosl_tick_us (void);
 
+/**
+ * @brief Get the current wall-clock time in seconds since epoch.
+ * @return  the current time in seconds
+ **/
 extern __aosl_api__ aosl_ts_t aosl_time_sec (void);
+
+/**
+ * @brief Get the current wall-clock time in milliseconds since epoch.
+ * @return  the current time in milliseconds
+ **/
 extern __aosl_api__ aosl_ts_t aosl_time_ms (void);
 
+/**
+ * @brief Sleep for the specified number of milliseconds.
+ * @param [in] ms  the duration to sleep in milliseconds
+ **/
 extern __aosl_api__ void aosl_msleep (uint64_t ms);
 
+/**
+ * @brief Format the current time as a human-readable string.
+ * @param [out] buf  the buffer to write the time string into
+ * @param [in]  len  the size of the buffer in bytes
+ * @return           0 on success, <0 on failure
+ **/
 extern __aosl_api__ int aosl_time_str(char *buf, int len);
 
 #ifdef __cplusplus

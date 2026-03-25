@@ -18,7 +18,16 @@ extern "C" {
 
 
 
+/**
+ * @brief Get the git branch name of the AOSL library build.
+ * @return  a null-terminated string of the git branch name
+ **/
 extern __aosl_api__ const char *aosl_get_git_branch (void);
+
+/**
+ * @brief Get the git commit hash of the AOSL library build.
+ * @return  a null-terminated string of the git commit hash
+ **/
 extern __aosl_api__ const char *aosl_get_git_commit (void);
 
 

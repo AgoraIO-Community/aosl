@@ -64,9 +64,32 @@ typedef int aosl_socklen_t;
 #define AOSL_INET6_ADDRSTRLEN 46
 #define AOSL_MAX_ADDRSTRLEN   AOSL_INET6_ADDRSTRLEN
 
+/**
+ * @brief Convert a 32-bit integer from host byte order to network byte order.
+ * @param [in] x  the 32-bit value in host byte order
+ * @return        the value in network byte order (big-endian)
+ **/
 extern __aosl_api__ uint32_t aosl_htonl(uint32_t x);
+
+/**
+ * @brief Convert a 16-bit integer from host byte order to network byte order.
+ * @param [in] x  the 16-bit value in host byte order
+ * @return        the value in network byte order (big-endian)
+ **/
 extern __aosl_api__ uint16_t aosl_htons(uint16_t x);
+
+/**
+ * @brief Convert a 32-bit integer from network byte order to host byte order.
+ * @param [in] x  the 32-bit value in network byte order
+ * @return        the value in host byte order
+ **/
 extern __aosl_api__ uint32_t aosl_ntohl(uint32_t x);
+
+/**
+ * @brief Convert a 16-bit integer from network byte order to host byte order.
+ * @param [in] x  the 16-bit value in network byte order
+ * @return        the value in host byte order
+ **/
 extern __aosl_api__ uint16_t aosl_ntohs(uint16_t x);
 
 #ifdef __cplusplus

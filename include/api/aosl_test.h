@@ -17,6 +17,9 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Run the AOSL built-in self-test suite.
+ **/
 extern __aosl_api__ void aosl_test (void);
 
 #ifdef __cplusplus

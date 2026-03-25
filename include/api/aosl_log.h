@@ -50,21 +50,21 @@ extern "C" {
 
 
 /**
- * The log callback function.
+ * @brief The log callback function.
  * The log level uses the same values as syslog, these values are used by AOSL library and
  * its' descendents, so please translate the log levels to your own log levels respectively.
  **/
 typedef void (*aosl_vlog_t) (int level, const char *fmt, va_list args);
 
 /**
- * The default AOSL log function is syslog, but you can provide your own log function.
+ * @brief The default AOSL log function is syslog, but you can provide your own log function.
  * Pay enough attention please, your own log function MUST conform the same semantics
  * with syslog, and all log levels must have the same meaning with the ones of syslog.
  **/
 extern __aosl_api__ void aosl_set_vlog_func (aosl_vlog_t vlog);
 
 /**
- * Get the aosl log level, AOSL_LOG_ERR is the default value.
+ * @brief Get the aosl log level, AOSL_LOG_ERR is the default value.
  * Parameters:
  *     none.
  * Return value:
@@ -73,7 +73,7 @@ extern __aosl_api__ void aosl_set_vlog_func (aosl_vlog_t vlog);
 extern __aosl_api__ int aosl_get_log_level (void);
 
 /**
- * Set the aosl log level, AOSL_LOG_ERR is the default value.
+ * @brief Set the aosl log level, AOSL_LOG_ERR is the default value.
  * Parameters:
  *     level: the log level you want to set
  * Return value:
@@ -81,12 +81,42 @@ extern __aosl_api__ int aosl_get_log_level (void);
  **/
 extern __aosl_api__ void aosl_set_log_level (int level);
 
+/**
+ * @brief Output a log message with the specified level.
+ * @param [in] level  the log level (e.g. AOSL_LOG_DEBUG, AOSL_LOG_ERROR)
+ * @param [in] fmt    printf-style format string
+ * @param [in] ...    format arguments
+ **/
 extern __aosl_api__ void aosl_printf_fmt23 aosl_log (int level, const char *fmt, ...);
+
+/**
+ * @brief Output a log message with the specified level (va_list version).
+ * @param [in] level  the log level
+ * @param [in] fmt    printf-style format string
+ * @param [in] args   variable argument list
+ **/
 extern __aosl_api__ void aosl_vlog (int level, const char *fmt, va_list args);
 
+/**
+ * @brief Print a formatted message to the default output.
+ * @param [in] fmt  printf-style format string
+ * @param [in] ...  format arguments
+ **/
 extern __aosl_api__ void aosl_printf_fmt12 aosl_printf (const char *fmt, ...);
+
+/**
+ * @brief Print a formatted message to the default output (va_list version).
+ * @param [in] fmt   printf-style format string
+ * @param [in] args  variable argument list
+ **/
 extern __aosl_api__ void aosl_vprintf (const char *fmt, va_list args);
 
+/**
+ * @brief Print a formatted panic message and abort the program.
+ * This function does not return.
+ * @param [in] fmt  printf-style format string
+ * @param [in] ...  format arguments
+ **/
 extern __aosl_api__ void aosl_printf_fmt12 aosl_panic (const char *fmt, ...);
 
 

@@ -19,3 +19,21 @@ __export_in_so__ int aosl_os_version (char buf [], size_t buf_sz)
 {
 	return aosl_hal_os_version(buf, (int)buf_sz);
 }
+
+__export_in_so__ int aosl_hwrng_available (void)
+{
+#if AOSL_HAL_HAVE_HWRNG
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+__export_in_so__ int aosl_rand_bytes (void *buf, size_t len)
+{
+#if AOSL_HAL_HAVE_HWRNG
+	return aosl_hal_rand_bytes(buf, (int)len);
+#else
+	return -1;
+#endif
+}

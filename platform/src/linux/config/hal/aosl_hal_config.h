@@ -8,4 +8,6 @@
 #define AOSL_HAL_HAVE_COND 1
 #define AOSL_HAL_HAVE_SEM 1
 
+#define AOSL_HAL_HAVE_HWRNG 1
+
 #endif /* __AOSL_HAL_CONFIG_H__ */

@@ -84,3 +84,31 @@ int aosl_hal_os_version (char buf [], int buf_sz)
 
 	return 0;
 }
+
+int aosl_hal_rand_bytes (void *buf, int len)
+{
+	int fd;
+	int rd;
+	int off = 0;
+
+	if (buf == NULL || len <= 0)
+		return -1;
+
+	fd = open ("/dev/urandom", O_RDONLY);
+	if (fd < 0)
+		return -1;
+
+	while (off < len) {
+		rd = read (fd, (char *)buf + off, len - off);
+		if (rd < 0) {
+			if (errno == EINTR)
+				continue;
+			close (fd);
+			return -1;
+		}
+		off += rd;
+	}
+
+	close (fd);
+	return 0;
+}

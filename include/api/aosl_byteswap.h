@@ -13,7 +13,18 @@
 #include <api/aosl_types.h>
 #include <api/aosl_defs.h>
 
+/**
+ * @brief Swap the byte order of a 32-bit unsigned integer.
+ * @param [in] v  the 32-bit value to byte-swap
+ * @return        the byte-swapped value
+ **/
 extern __aosl_api__ uint32_t aosl_bswap_32 (uint32_t v);
+
+/**
+ * @brief Swap the byte order of a 64-bit unsigned integer.
+ * @param [in] v  the 64-bit value to byte-swap
+ * @return        the byte-swapped value
+ **/
 extern __aosl_api__ uint64_t aosl_bswap_64 (uint64_t v);
 
 #endif /* __AOSL_BYTESWAP_H__ */

@@ -56,7 +56,7 @@ static inline void __aosl_list_add (struct aosl_list_head *new_node, struct aosl
 }
 
 /**
- * Add a new entry as the head of the list.
+ * @brief Add a new entry as the head of the list.
  * Parameters:
  *        new: new entry to be added
  *       head: list head to add it after
@@ -68,7 +68,7 @@ static inline void aosl_list_add (struct aosl_list_head *new_node, struct aosl_l
 
 
 /**
- * Add a new entry as the tail of the list
+ * @brief Add a new entry as the tail of the list
  * Parameters:
  *        new: new entry to be added
  *       head: list head to add it before
@@ -137,7 +137,7 @@ static __inline__ int aosl_list_valid(const struct aosl_list_head *head)
 }
 
 /**
- * Tests whether a list is empty and not being modified
+ * @brief Tests whether a list is empty and not being modified
  * Parameters:
  *       head: the list to test
  * Return Value:

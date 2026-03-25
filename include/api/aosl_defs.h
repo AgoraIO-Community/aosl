@@ -11,7 +11,16 @@
 #define __AOSL_DEFS_H__
 
 
+/**
+ * @brief Stringify a macro argument without expansion.
+ * @param [in] x  the token to stringify
+ */
 #define aosl_stringify_1(x) #x
+
+/**
+ * @brief Stringify a macro argument with full expansion.
+ * @param [in] x  the macro or token to expand and stringify
+ */
 #define aosl_stringify(x) aosl_stringify_1(x)
 
 /**
@@ -22,8 +31,8 @@
  * 
  * Usage: aosl_static_assert(sizeof(int) == 4, int_size_check);
  * 
- * @param condition The condition to check at compile time
- * @param name A unique identifier for this assertion (must be a valid C identifier)
+ * @param [in] condition The condition to check at compile time
+ * @param [in] name A unique identifier for this assertion (must be a valid C identifier)
  */
 #define aosl_static_assert(condition, name) \
 	typedef char aosl_static_assert_##name[(condition) ? 1 : -1]
@@ -46,10 +55,42 @@ extern "C" {
 #endif
 
 
+/**
+ * @brief Return the minimum of two values.
+ * @param [in] x  the first value
+ * @param [in] y  the second value
+ */
 #define aosl_min(x, y) ((x) < (y) ? (x) : (y))
+
+/**
+ * @brief Return the maximum of two values.
+ * @param [in] x  the first value
+ * @param [in] y  the second value
+ */
 #define aosl_max(x, y) ((x) > (y) ? (x) : (y))
+
+/**
+ * @brief Return the minimum of three values.
+ * @param [in] x  the first value
+ * @param [in] y  the second value
+ * @param [in] z  the third value
+ */
 #define aosl_min3(x, y, z) aosl_min(aosl_min(x, y), z)
+
+/**
+ * @brief Return the maximum of three values.
+ * @param [in] x  the first value
+ * @param [in] y  the second value
+ * @param [in] z  the third value
+ */
 #define aosl_max3(x, y, z) aosl_max(aosl_max(x, y), z)
+
+/**
+ * @brief Clamp a value to the range [lo, hi].
+ * @param [in] val  the value to clamp
+ * @param [in] lo   the lower bound
+ * @param [in] hi   the upper bound
+ */
 #define aosl_clamp(val, lo, hi) aosl_min(aosl_max(val, lo), hi)
 
 

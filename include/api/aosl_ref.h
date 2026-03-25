@@ -25,11 +25,12 @@ typedef int aosl_ref_t;
 
 #define AOSL_REF_INVALID ((aosl_ref_t)-1)
 
+/** @brief Check if a ref id is invalid. */
 #define aosl_ref_invalid(ref) (((int16_t)(ref)) < 0)
 
 
 /**
- * The reference object destructor function prototype, which invoked when application
+ * @brief The reference object destructor function prototype, which invoked when application
  * calling aosl_ref_destroy functions to release resources.
  * Parameter:
  *       arg: the parameter passed in when creating the reference object;
@@ -39,7 +40,7 @@ typedef int aosl_ref_t;
 typedef void (*aosl_ref_dtor_t) (void *arg);
 
 /**
- * The reference object creating function prototype, which is used to create a ref object.
+ * @brief The reference object creating function prototype, which is used to create a ref object.
  * Parameters:
  *              arg: the parameter attached with the reference object;
  *             dtor: the ref object destructor function, which will be invoked when
@@ -62,7 +63,7 @@ extern __aosl_api__ aosl_ref_t aosl_ref_create (void *arg, aosl_ref_dtor_t dtor,
 
 
 /**
- * The ref object callback function prototype.
+ * @brief The ref object callback function prototype.
  * Parameter:
  *            arg: the ref object argument which was passed in when creating;
  *           argc: specify the argv array elements count, the same as the argc
@@ -75,7 +76,7 @@ extern __aosl_api__ aosl_ref_t aosl_ref_create (void *arg, aosl_ref_dtor_t dtor,
 typedef void (*aosl_ref_func_t) (void *arg, uintptr_t argc, uintptr_t argv []);
 
 /**
- * Hold the ref object, and invoke the specified callback function.
+ * @brief Hold the ref object, and invoke the specified callback function.
  * Parameter:
  *            ref: the ref object id;
  *              f: the callback function;
@@ -90,7 +91,7 @@ extern __aosl_api__ int aosl_ref_hold_args (aosl_ref_t ref, aosl_ref_func_t f, u
 extern __aosl_api__ int aosl_ref_hold_argv (aosl_ref_t ref, aosl_ref_func_t f, uintptr_t argc, uintptr_t argv []);
 
 /**
- * Hold the ref object and read lock it, then invoke the specified callback function.
+ * @brief Hold the ref object and read lock it, then invoke the specified callback function.
  * Parameter:
  *            ref: the ref object id;
  *              f: the callback function;
@@ -105,7 +106,7 @@ extern __aosl_api__ int aosl_ref_read_args (aosl_ref_t ref, aosl_ref_func_t f, u
 extern __aosl_api__ int aosl_ref_read_argv (aosl_ref_t ref, aosl_ref_func_t f, uintptr_t argc, uintptr_t argv []);
 
 /**
- * Hold the ref object and write lock it, then invoke the specified callback function.
+ * @brief Hold the ref object and write lock it, then invoke the specified callback function.
  * Parameter:
  *            ref: the ref object id;
  *              f: the callback function;
@@ -123,10 +124,11 @@ extern __aosl_api__ int aosl_ref_write_argv (aosl_ref_t ref, aosl_ref_func_t f, 
 typedef void *aosl_refobj_t;
 
 #define AOSL_FREE_ONLY_OBJ ((aosl_refobj_t)(uintptr_t)1)
+/** @brief Check if a refobj is the free-only sentinel value. */
 #define aosl_is_free_only(robj) ((int)((aosl_refobj_t)(robj) == AOSL_FREE_ONLY_OBJ))
 
 /**
- * Retrieve the ref object arg.
+ * @brief Retrieve the ref object arg.
  * Parameters:
  *     robj: the reference object;
  * Return value:
@@ -135,7 +137,7 @@ typedef void *aosl_refobj_t;
 extern __aosl_api__ void *aosl_refobj_arg (aosl_refobj_t robj);
 
 /**
- * Get the ref id of the specified ref object.
+ * @brief Get the ref id of the specified ref object.
  * Parameters:
  *      robj: the reference object;
  * Return value:
@@ -144,7 +146,7 @@ extern __aosl_api__ void *aosl_refobj_arg (aosl_refobj_t robj);
 extern __aosl_api__ aosl_ref_t aosl_refobj_id (aosl_refobj_t robj);
 
 /**
- * Make sure read lock the ref object specified by robj, then invoke the specified callback function.
+ * @brief Make sure read lock the ref object specified by robj, then invoke the specified callback function.
  * Parameter:
  *           robj: the ref object itself;
  *              f: the callback function;
@@ -160,7 +162,7 @@ extern __aosl_api__ int aosl_refobj_read_argv (aosl_refobj_t robj, aosl_ref_func
 
 
 /**
- * Destroy the reference object specified by ref.
+ * @brief Destroy the reference object specified by ref.
  * Parameter:
  *         ref: the reference object id
  *   do_delete: 0 for just marking it destroyed

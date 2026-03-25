@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "esp_system.h"
 #include "esp_random.h"
@@ -48,5 +49,28 @@ int aosl_hal_os_version (char buf [], int buf_sz)
 		return -1;
 	}
 	snprintf(buf, buf_sz, "%s", "esp32-s3");
+	return 0;
+}
+
+int aosl_hal_rand_bytes (void *buf, int len)
+{
+	int off = 0;
+	uint32_t rnd;
+
+	if (buf == NULL || len <= 0)
+		return -1;
+
+	/* Use ESP32 hardware RNG via esp_random() */
+	while (off < len) {
+		rnd = esp_random ();
+		if (len - off >= (int)sizeof (uint32_t)) {
+			memcpy ((char *)buf + off, &rnd, sizeof (uint32_t));
+			off += sizeof (uint32_t);
+		} else {
+			memcpy ((char *)buf + off, &rnd, len - off);
+			off = len;
+		}
+	}
+
 	return 0;
 }

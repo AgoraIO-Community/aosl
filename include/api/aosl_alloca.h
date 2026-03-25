@@ -16,6 +16,10 @@
 #include <malloc.h>
 #endif
 
+/**
+ * @brief Allocate memory on the stack (wrapper around alloca).
+ * @param [in] size  the number of bytes to allocate
+ */
 #define aosl_alloca(size)  alloca((size))
 
 #endif /* __AOSL_ALLOCA_H__ */

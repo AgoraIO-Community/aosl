@@ -132,9 +132,20 @@
 /* HAL common error */
 #define AOSL_EHAL        (AOSL_EBASE + 1000) /* HAL common error */
 
+/**
+ * @brief Get the pointer to the thread-local AOSL errno variable.
+ * @return  pointer to the current thread's errno value
+ **/
 extern __aosl_api__ int *aosl_errno_ptr (void);
+
+/**
+ * @brief Get the human-readable error description string for an AOSL error code.
+ * @param [in] errnum  the AOSL error number
+ * @return             pointer to a static string describing the error
+ **/
 extern __aosl_api__ char *aosl_strerror (int errnum);
 
+/** @brief The thread-local AOSL errno variable. */
 #define aosl_errno (*aosl_errno_ptr ())
 
 #endif /* __AOSL_ERRNO_H__ */

@@ -31,7 +31,15 @@
 extern "C" {
 #endif
 
+/**
+ * Initialize the AOSL library. Must be called before using any AOSL API.
+ **/
 extern __aosl_api__ void aosl_ctor (void);
+
+/**
+ * Finalize the AOSL library and release all resources.
+ * Must be called when AOSL is no longer needed.
+ **/
 extern __aosl_api__ void aosl_dtor (void);
 
 #ifdef __cplusplus
