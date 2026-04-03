@@ -186,7 +186,7 @@ int os_poll_dispatch (struct mp_queue *q, intptr_t timeo)
 	return err;
 }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 #include <unistd.h>
 #else
 #include <hal/aosl_hal_socket.h>
@@ -237,7 +237,7 @@ static int os_socket_pipe(int pipefd[2])
 
 static int os_pipe(int pipefd[2], int *type)
 {
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 	*type = WAKEUP_TYPE_PIPE;
 	return pipe (pipefd);
 #else

@@ -118,7 +118,10 @@ typedef void* aosl_mutex_t;
  * Contains platform-specific mutex data in an opaque array
  */
 typedef struct {
-    uint8_t opaque[AOSL_STATIC_MUTEX_SIZE];
+    union {
+        uint8_t opaque[AOSL_STATIC_MUTEX_SIZE];
+        uint64_t _align; /* force 8-byte alignment */
+    };
 } aosl_static_mutex_t;
 
 /**

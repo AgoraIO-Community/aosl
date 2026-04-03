@@ -90,8 +90,8 @@ extern __aosl_api__ void aosl_lock_destroy (aosl_lock_t lock);
  * This type can be statically declared and initialized at compile time.
  */
 typedef struct {
-	aosl_static_mutex_t hal_mutex;  /**< HAL layer static mutex */
 	intptr_t state;                 /**< Atomic initialization state */
+	aosl_static_mutex_t hal_mutex;  /**< HAL layer static mutex */
 } aosl_static_lock_t;
 
 /**

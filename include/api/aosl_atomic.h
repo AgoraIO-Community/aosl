@@ -18,21 +18,21 @@ extern "C" {
 #endif
 
 
-typedef int aosl_atomic_t;
+typedef intptr_t aosl_atomic_t;
 
 /**
  * @brief Atomically read the value of an atomic variable.
  * @param [in] v  pointer to the atomic variable
  * @return        the current value of *v
  **/
-extern __aosl_api__ int aosl_atomic_read (const aosl_atomic_t *v);
+extern __aosl_api__ intptr_t aosl_atomic_read (const aosl_atomic_t *v);
 
 /**
  * @brief Atomically set the value of an atomic variable.
  * @param [in,out] v  pointer to the atomic variable
  * @param [in]     i  the value to set
  **/
-extern __aosl_api__ void aosl_atomic_set (aosl_atomic_t *v, int i);
+extern __aosl_api__ void aosl_atomic_set (aosl_atomic_t *v, intptr_t i);
 
 /**
  * @brief Atomically increment an atomic variable by 1.
@@ -52,7 +52,7 @@ extern __aosl_api__ void aosl_atomic_dec (aosl_atomic_t *v);
  * @param [in,out] v  pointer to the atomic variable
  * @return             the new value after addition
  **/
-extern __aosl_api__ int aosl_atomic_add_return (int i, aosl_atomic_t *v);
+extern __aosl_api__ intptr_t aosl_atomic_add_return (intptr_t i, aosl_atomic_t *v);
 
 /**
  * @brief Atomically subtract a value and return the result.
@@ -60,7 +60,7 @@ extern __aosl_api__ int aosl_atomic_add_return (int i, aosl_atomic_t *v);
  * @param [in,out] v  pointer to the atomic variable
  * @return             the new value after subtraction
  **/
-extern __aosl_api__ int aosl_atomic_sub_return (int i, aosl_atomic_t *v);
+extern __aosl_api__ intptr_t aosl_atomic_sub_return (intptr_t i, aosl_atomic_t *v);
 
 /**
  * @brief Atomically increment and test if the result is zero.
@@ -84,7 +84,7 @@ extern __aosl_api__ int aosl_atomic_dec_and_test (aosl_atomic_t *v);
  * @param [in]     newval  the new value to set if comparison succeeds
  * @return                 the old value before the operation
  **/
-extern __aosl_api__ int aosl_atomic_cmpxchg (aosl_atomic_t *v, int oldval, int newval);
+extern __aosl_api__ intptr_t aosl_atomic_cmpxchg (aosl_atomic_t *v, intptr_t oldval, intptr_t newval);
 
 /**
  * @brief Atomic exchange operation. Set *v to newval and return the old value.
@@ -92,7 +92,7 @@ extern __aosl_api__ int aosl_atomic_cmpxchg (aosl_atomic_t *v, int oldval, int n
  * @param [in]     newval  the new value to set
  * @return                 the old value before the exchange
  **/
-extern __aosl_api__ int aosl_atomic_xchg (aosl_atomic_t *v, int newval);
+extern __aosl_api__ intptr_t aosl_atomic_xchg (aosl_atomic_t *v, intptr_t newval);
 
 /**
  * @brief Full memory barrier. Ensures all memory operations before this call

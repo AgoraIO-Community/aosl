@@ -42,7 +42,7 @@ static uint16_t __mpqobj_life_id = 1;
 
 static uintptr_t __mpq_count = 0;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 __thread struct mp_queue *__this_q;
 struct mp_queue *__get_this_mpq (void)
 {
@@ -68,7 +68,7 @@ static void mpq_init (void)
 	mpq_table_size = STATIC_MPQ_ID_POOL_SIZE;
 	memset (mpq_table, 0, sizeof (struct mp_queue *) * mpq_table_size);
 
-#ifndef __linux__
+#if !defined(__linux__) && !defined(__APPLE__)
 	if (k_tls_key_create (&__this_q_key) != 0)
 		abort ();
 #endif
@@ -759,7 +759,7 @@ static void __q_destroy (struct mp_queue *q)
 
 static __inline__ void __set_this_mpq (struct mp_queue *q)
 {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 	__this_q = q;
 #else
 	k_tls_key_set (__this_q_key, q);

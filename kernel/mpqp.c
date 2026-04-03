@@ -581,11 +581,11 @@ static int __mpqp_create_gen_pool (void)
 #ifdef CONFIG_LTWP_SIZE
 #define LTWP_SIZE CONFIG_LTWP_SIZE
 #else
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 #define LTWP_SIZE 2
 #else
 #define LTWP_SIZE 1
-#endif // __linux__
+#endif
 #endif // CONFIG_LTWP_SIZE
 
 // max idles time (s)
