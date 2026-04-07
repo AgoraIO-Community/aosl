@@ -984,6 +984,26 @@ static int aosl_test_hal_thread_detach(void)
 }
 
 // Test 3: Mutex lock/unlock
+// Helper struct for hal mutex trylock test from another thread
+struct mutex_trylock_test_data {
+  aosl_mutex_t mutex;
+  intptr_t done;
+  int trylock_result;
+};
+
+// Thread function: try to acquire a hal mutex that should be held by the main thread
+static void *thread_entry_mutex_trylock(void *arg)
+{
+  struct mutex_trylock_test_data *data = (struct mutex_trylock_test_data *)arg;
+  data->trylock_result = aosl_hal_mutex_trylock(data->mutex);
+  if (data->trylock_result == 0) {
+    // Unexpectedly acquired, release it
+    aosl_hal_mutex_unlock(data->mutex);
+  }
+  aosl_hal_atomic_set(&data->done, 1);
+  return NULL;
+}
+
 static int aosl_test_hal_thread_mutex_basic(void)
 {
   int ret;
@@ -996,12 +1016,30 @@ static int aosl_test_hal_thread_mutex_basic(void)
   ret = aosl_hal_mutex_lock(mutex);
   CHECK_FMT(ret == 0, "mutex_lock returned %d", ret);
   
-  ret = aosl_hal_mutex_trylock(mutex);
-  if (ret == 0) { // Should fail because already locked
-    LOG_FMT("mutex_trylock should have failed but succeeded");
-    aosl_hal_mutex_unlock(mutex);
-    aosl_hal_mutex_destroy(mutex);
-    return -1;
+  // Test trylock from another thread (should fail because main thread holds the lock)
+  {
+    struct mutex_trylock_test_data tdata;
+    aosl_thread_t tid;
+    aosl_thread_param_t param = {0};
+
+    tdata.mutex = mutex;
+    tdata.trylock_result = 0;
+    tdata.done = 0;
+    param.name = "trylock-test";
+    param.priority = AOSL_THRD_PRI_DEFAULT;
+
+    ret = aosl_hal_thread_create(&tid, &param, thread_entry_mutex_trylock, &tdata);
+    CHECK_FMT(ret == 0, "thread_create returned %d", ret);
+
+    // Poll for completion (join may be empty on some platforms)
+    while (!aosl_hal_atomic_read(&tdata.done)) {
+      aosl_hal_msleep(100);
+    }
+    aosl_hal_thread_join(tid, NULL);
+    aosl_hal_thread_destroy(tid);
+
+    CHECK_FMT(tdata.trylock_result != 0,
+              "mutex_trylock from another thread should have failed but succeeded");
   }
   
   ret = aosl_hal_mutex_unlock(mutex);
@@ -1418,6 +1456,26 @@ static void *thread_entry_static_lock(void *arg)
   return NULL;
 }
 
+// Helper struct for trylock test from another thread
+struct static_lock_trylock_test_data {
+  aosl_static_lock_t *lock;
+  intptr_t done;
+  int trylock_result; // 0 = acquired (unexpected), non-zero = failed to acquire (expected)
+};
+
+// Thread function: try to acquire a lock that should be held by the main thread
+static void *thread_entry_static_lock_trylock(void *arg)
+{
+  struct static_lock_trylock_test_data *data = (struct static_lock_trylock_test_data *)arg;
+  data->trylock_result = aosl_static_lock_trylock(data->lock);
+  if (data->trylock_result == 0) {
+    // Unexpectedly acquired, release it
+    aosl_static_lock_unlock(data->lock);
+  }
+  aosl_hal_atomic_set(&data->done, 1);
+  return NULL;
+}
+
 // Test: Basic static lock operations
 static int aosl_test_api_static_lock_basic(void)
 {
@@ -1434,19 +1492,37 @@ static int aosl_test_api_static_lock_basic(void)
   ret = aosl_static_lock_lock(&static_lock);
   CHECK_FMT(ret == 0, "static_lock_lock returned %d", ret);
   
-  // Test trylock operation (should fail because already locked)
-  ret = aosl_static_lock_trylock(&static_lock);
-  if (ret == 0) {
-    LOG_FMT("static_lock_trylock should have failed but succeeded");
-    aosl_static_lock_unlock(&static_lock);
-    return -1;
+  // Test trylock from another thread (should fail because main thread holds the lock)
+  {
+    struct static_lock_trylock_test_data tdata;
+    aosl_thread_t tid;
+    aosl_thread_param_t param = {0};
+
+    tdata.lock = &static_lock;
+    tdata.trylock_result = 0;
+    tdata.done = 0;
+    param.name = "trylock-test";
+    param.priority = AOSL_THRD_PRI_DEFAULT;
+
+    ret = aosl_hal_thread_create(&tid, &param, thread_entry_static_lock_trylock, &tdata);
+    CHECK_FMT(ret == 0, "thread_create returned %d", ret);
+
+    // Poll for completion (join may be empty on some platforms)
+    while (!aosl_hal_atomic_read(&tdata.done)) {
+      aosl_hal_msleep(100);
+    }
+    aosl_hal_thread_join(tid, NULL);
+    aosl_hal_thread_destroy(tid);
+
+    CHECK_FMT(tdata.trylock_result != 0,
+              "trylock from another thread should have failed but succeeded");
   }
   
   // Test unlock operation
   ret = aosl_static_lock_unlock(&static_lock);
   CHECK_FMT(ret == 0, "static_lock_unlock returned %d", ret);
   
-  // Test trylock operation (should succeed now)
+  // Test trylock operation (should succeed now, lock is free)
   ret = aosl_static_lock_trylock(&static_lock);
   CHECK_FMT(ret == 0, "static_lock_trylock returned %d", ret);
   
@@ -1454,6 +1530,7 @@ static int aosl_test_api_static_lock_basic(void)
   ret = aosl_static_lock_unlock(&static_lock);
   CHECK_FMT(ret == 0, "final static_lock_unlock returned %d", ret);
   
+  aosl_static_lock_fini(&static_lock);
   LOG_FMT("test success");
   return 0;
 }
@@ -1498,6 +1575,7 @@ static int aosl_test_api_static_lock_contention(void)
   
   CHECK_FMT(test_data.counter == 300, "counter=%d, expected 300", test_data.counter);
   
+  aosl_static_lock_fini(&test_data.static_lock);
   LOG_FMT("test success, final counter=%d", test_data.counter);
   return 0;
 }

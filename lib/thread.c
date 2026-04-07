@@ -82,6 +82,11 @@ __export_in_so__ int aosl_static_lock_init (aosl_static_lock_t *lock)
 	return_err (k_static_lock_init ((k_static_lock_t *)lock));
 }
 
+__export_in_so__ void aosl_static_lock_fini (aosl_static_lock_t *lock)
+{
+	k_static_lock_fini ((k_static_lock_t *)lock);
+}
+
 __export_in_so__ int aosl_static_lock_lock (aosl_static_lock_t *lock)
 {
 	return_err (k_static_lock_lock ((k_static_lock_t *)lock));

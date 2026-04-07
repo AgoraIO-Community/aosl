@@ -143,6 +143,15 @@ typedef struct {
 int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex);
 
 /**
+ * @brief finalize a static mutex
+ * Release resources associated with a static mutex.
+ * Must be called before the memory holding the static mutex is freed.
+ * 
+ * @param [in] mutex pointer to static mutex
+ */
+void aosl_hal_static_mutex_fini(aosl_static_mutex_t *mutex);
+
+/**
  * @brief create a new mutex
  * @return mutex handle, or NULL on error
  */

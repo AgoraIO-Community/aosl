@@ -112,6 +112,13 @@ typedef struct {
 extern __aosl_api__ int aosl_static_lock_init (aosl_static_lock_t *lock);
 
 /**
+ * @brief Finalize a static lock, releasing underlying resources.
+ * Must be called before the memory holding the lock is freed.
+ * @param [in,out] lock  pointer to the static lock
+ **/
+extern __aosl_api__ void aosl_static_lock_fini (aosl_static_lock_t *lock);
+
+/**
  * @brief Acquire a static lock (blocking).
  * @param [in,out] lock  pointer to the static lock
  * @return               0 on success, <0 on failure

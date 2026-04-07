@@ -1,6 +1,5 @@
 #include <hal/aosl_hal_iomp.h>
 #include <hal/aosl_hal_memory.h>
-#include <api/aosl_log.h>
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 

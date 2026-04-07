@@ -477,3 +477,13 @@ int k_static_lock_unlock (k_static_lock_t *lock)
 	// Cast opaque array address to aosl_mutex_t (void*)
 	return aosl_hal_mutex_unlock((aosl_mutex_t)lock->hal_mutex.opaque);
 }
+
+void k_static_lock_fini (k_static_lock_t *lock)
+{
+	intptr_t state = aosl_hal_atomic_read(&lock->state);
+
+	if (state == K_STATIC_LOCK_INITIALIZED) {
+		aosl_hal_static_mutex_fini(&lock->hal_mutex);
+		aosl_hal_atomic_set(&lock->state, K_STATIC_LOCK_UNINIT);
+	}
+}

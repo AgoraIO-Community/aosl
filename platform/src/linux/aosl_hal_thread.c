@@ -177,6 +177,11 @@ int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex)
 	return 0;
 }
 
+void aosl_hal_static_mutex_fini(aosl_static_mutex_t *mutex)
+{
+	(void)mutex;
+}
+
 aosl_cond_t aosl_hal_cond_create(void)
 {
 	pthread_cond_t *n_cond = aosl_calloc(1, sizeof(pthread_cond_t));

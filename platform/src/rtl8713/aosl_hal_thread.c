@@ -288,3 +288,8 @@ int aosl_hal_static_mutex_init(aosl_static_mutex_t *mutex)
 	(void)mutex;
 	return 0;
 }
+
+void aosl_hal_static_mutex_fini(aosl_static_mutex_t *mutex)
+{
+	(void)mutex;
+}

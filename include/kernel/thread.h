@@ -120,6 +120,7 @@ extern void k_lock_unlock (k_lock_t *lk);
 extern void k_lock_destroy (k_lock_t *lk);
 
 extern int k_static_lock_init (k_static_lock_t *lock);
+extern void k_static_lock_fini (k_static_lock_t *lock);
 extern int k_static_lock_lock (k_static_lock_t *lock);
 extern int k_static_lock_trylock (k_static_lock_t *lock);
 extern int k_static_lock_unlock (k_static_lock_t *lock);
