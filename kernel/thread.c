@@ -14,6 +14,7 @@
 #include <kernel/types.h>
 #include <kernel/thread.h>
 #include <api/aosl_mm.h>
+#include <api/aosl_log.h>
 #include <api/aosl_thread.h>
 #include <api/aosl_time.h>
 #include <hal/aosl_hal_thread.h>
@@ -397,6 +398,7 @@ int k_static_lock_init (k_static_lock_t *lock)
 		// Current thread won the race and gets to perform initialization
 		int ret = aosl_hal_static_mutex_init(&lock->hal_mutex);
 		if (ret != 0) {
+			AOSL_LOG_ERR("static_lock_init: hal_static_mutex_init failed, ret=%d", ret);
 			// Initialization failed, restore state to UNINIT
 			aosl_hal_atomic_set(&lock->state, K_STATIC_LOCK_UNINIT);
 			return ret;
@@ -408,9 +410,13 @@ int k_static_lock_init (k_static_lock_t *lock)
 
 	} else if (old_state == K_STATIC_LOCK_INITIALIZING) {
 		// Another thread is currently initializing, spin-wait until done
+		int retries = 0;
 		while (aosl_hal_atomic_read(&lock->state) == K_STATIC_LOCK_INITIALIZING) {
-			// Spin-wait (could add a short delay here if needed)
-			aosl_msleep(5);
+			if (++retries > 100) {
+				AOSL_LOG_ERR("static_lock_init: stuck waiting for INITIALIZING state, possible bug");
+				return -1;
+			}
+			aosl_msleep(10);
 		}
 		return 0;
 
@@ -420,70 +426,82 @@ int k_static_lock_init (k_static_lock_t *lock)
 	}
 }
 
-int k_static_lock_lock (k_static_lock_t *lock)
-{
-	// Check initialization state
-	intptr_t state = aosl_hal_atomic_read(&lock->state);
-
-	if (state != K_STATIC_LOCK_INITIALIZED) {
-		// Not initialized or initializing, call init function
-		// init function handles concurrent initialization
-		int ret = k_static_lock_init(lock);
-		if (ret != 0) {
-			return ret;
-		}
-	}
-
-	// Already initialized, perform lock operation
-	// Cast opaque array address to aosl_mutex_t (void*)
-	return aosl_hal_mutex_lock((aosl_mutex_t)lock->hal_mutex.opaque);
-}
-
-int k_static_lock_trylock (k_static_lock_t *lock)
-{
-	// Check initialization state
-	intptr_t state = aosl_hal_atomic_read(&lock->state);
-
-	if (state != K_STATIC_LOCK_INITIALIZED) {
-		// Not initialized or initializing, call init function
-		// init function handles concurrent initialization
-		int ret = k_static_lock_init(lock);
-		if (ret != 0) {
-			return ret;
-		}
-	}
-
-	// Already initialized, perform trylock operation
-	// Cast opaque array address to aosl_mutex_t (void*)
-	return aosl_hal_mutex_trylock((aosl_mutex_t)lock->hal_mutex.opaque);
-}
-
-int k_static_lock_unlock (k_static_lock_t *lock)
-{
-	// Check initialization state
-	intptr_t state = aosl_hal_atomic_read(&lock->state);
-
-	if (state != K_STATIC_LOCK_INITIALIZED) {
-		// Not initialized or initializing, call init function
-		// Note: This is defensive programming - normally unlock should only be called
-		// after lock, but we handle the edge case where unlock is called before init
-		int ret = k_static_lock_init(lock);
-		if (ret != 0) {
-			return ret;
-		}
-	}
-
-	// Already initialized, perform unlock operation
-	// Cast opaque array address to aosl_mutex_t (void*)
-	return aosl_hal_mutex_unlock((aosl_mutex_t)lock->hal_mutex.opaque);
-}
-
 void k_static_lock_fini (k_static_lock_t *lock)
 {
+	int retries = 0;
 	intptr_t state = aosl_hal_atomic_read(&lock->state);
+
+	// Wait for concurrent initialization to complete
+	while (state == K_STATIC_LOCK_INITIALIZING) {
+		if (++retries > 100) {
+			AOSL_LOG_ERR("static_lock_fini: stuck in INITIALIZING state, possible bug");
+			return;
+		}
+		aosl_msleep(10);
+		state = aosl_hal_atomic_read(&lock->state);
+	}
 
 	if (state == K_STATIC_LOCK_INITIALIZED) {
 		aosl_hal_static_mutex_fini(&lock->hal_mutex);
 		aosl_hal_atomic_set(&lock->state, K_STATIC_LOCK_UNINIT);
 	}
+}
+
+int k_static_lock_lock (k_static_lock_t *lock)
+{
+	int ret;
+	// Check initialization state
+	intptr_t state = aosl_hal_atomic_read(&lock->state);
+
+	if (state != K_STATIC_LOCK_INITIALIZED) {
+		ret = k_static_lock_init(lock);
+		if (ret != 0) {
+			AOSL_LOG_ERR("static_lock_lock: init failed, ret=%d", ret);
+			return ret;
+		}
+	}
+
+	ret = aosl_hal_mutex_lock((aosl_mutex_t)lock->hal_mutex.opaque);
+	if (ret != 0) {
+		AOSL_LOG_ERR("static_lock_lock: mutex_lock failed, ret=%d", ret);
+	}
+	return ret;
+}
+
+int k_static_lock_trylock (k_static_lock_t *lock)
+{
+	int ret;
+	// Check initialization state
+	intptr_t state = aosl_hal_atomic_read(&lock->state);
+
+	if (state != K_STATIC_LOCK_INITIALIZED) {
+		ret = k_static_lock_init(lock);
+		if (ret != 0) {
+			AOSL_LOG_ERR("static_lock_trylock: init failed, ret=%d", ret);
+			return ret;
+		}
+	}
+
+	return aosl_hal_mutex_trylock((aosl_mutex_t)lock->hal_mutex.opaque);
+}
+
+int k_static_lock_unlock (k_static_lock_t *lock)
+{
+	int ret;
+	// Check initialization state
+	intptr_t state = aosl_hal_atomic_read(&lock->state);
+
+	if (state != K_STATIC_LOCK_INITIALIZED) {
+		ret = k_static_lock_init(lock);
+		if (ret != 0) {
+			AOSL_LOG_ERR("static_lock_unlock: init failed, ret=%d", ret);
+			return ret;
+		}
+	}
+
+	ret = aosl_hal_mutex_unlock((aosl_mutex_t)lock->hal_mutex.opaque);
+	if (ret != 0) {
+		AOSL_LOG_ERR("static_lock_unlock: mutex_unlock failed, ret=%d", ret);
+	}
+	return ret;
 }
