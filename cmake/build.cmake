@@ -57,7 +57,7 @@ list(APPEND AOSL_ADD_SOURCES
     "${AOSL_DIR}/kernel/et_mp.c"
     "${AOSL_DIR}/kernel/rt_monitor.c"
 
-    "${AOSL_DIR}/lib/thread.c"
+    "${AOSL_DIR}/lib/thread_api.c"
     "${AOSL_DIR}/lib/atomic.c"
     "${AOSL_DIR}/lib/bitmap.c"
     "${AOSL_DIR}/lib/rbtree.c"
