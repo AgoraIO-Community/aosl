@@ -9,7 +9,7 @@
 
 #include <api/aosl_marshalling.h>
 
-#ifndef CONFIG_WINDOWS
+#ifndef _WIN32
 #define __export_data_in_so__ __export_in_so__
 #else
 #define __export_data_in_so__

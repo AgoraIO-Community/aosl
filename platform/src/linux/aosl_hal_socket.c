@@ -118,15 +118,18 @@ static int get_addrlen(int af)
 	}
 }
 
-int aosl_hal_sk_socket(enum aosl_socket_domain domain,
+aosl_fd_t aosl_hal_sk_socket(enum aosl_socket_domain domain,
 											 enum aosl_socket_type type,
 											 enum aosl_socket_proto protocol)
 {
 	int n_domain = conv_domain_to_os(domain);
 	int n_type = conv_type_to_os(type);
 	int n_proto = conv_proto_to_os(protocol);
-
-	return socket(n_domain, n_type, n_proto);
+	int fd = socket(n_domain, n_type, n_proto);
+	if (fd < 0) {
+		return AOSL_INVALID_FD;
+	}
+	return (aosl_fd_t)fd;
 }
 
 int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr)
@@ -175,7 +178,7 @@ int aosl_hal_sk_listen(int sockfd, int backlog)
 	return 0;
 }
 
-int aosl_hal_sk_accept(int sockfd, aosl_sockaddr_t *addr)
+aosl_fd_t aosl_hal_sk_accept(aosl_fd_t sockfd, aosl_sockaddr_t *addr)
 {
 	struct sockaddr_in6 com_addr = {0};
 	struct sockaddr *n_addr = (struct sockaddr *)&com_addr;
@@ -183,14 +186,15 @@ int aosl_hal_sk_accept(int sockfd, aosl_sockaddr_t *addr)
 	int ret = accept(sockfd, n_addr, &addrlen);
 	if (ret < 0) {
 		int orig_errno = errno;
-		ret = aosl_hal_errno_convert(orig_errno);
-		if (ret == AOSL_HAL_RET_EHAL) {
-			AOSL_LOG_ERR("accept errno convert: %d -> %d", orig_errno, ret);
+		int hal_err = aosl_hal_errno_convert(orig_errno);
+		if (hal_err == AOSL_HAL_RET_EHAL) {
+			AOSL_LOG_ERR("accept errno convert: %d -> %d", orig_errno, hal_err);
 		}
+		return AOSL_INVALID_FD;
 	} else {
 		conv_addr_to_aosl(n_addr, addr);
 	}
-	return ret;
+	return (aosl_fd_t)ret;
 }
 
 int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr)

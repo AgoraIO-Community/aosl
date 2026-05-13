@@ -15,6 +15,12 @@
 
 #include <kernel/thread.h>
 
+#if defined(__linux__)
+#include <sys/prctl.h>
+#elif defined(__APPLE__)
+#include <pthread.h>
+#endif
+
 void bug_slowpath (const char *file, int line, void *caller, const char *fmt, ...)
 {
 	k_thread_t this;
@@ -22,11 +28,15 @@ void bug_slowpath (const char *file, int line, void *caller, const char *fmt, ..
 	va_list args;
 
 	this = k_thread_self ();
-
-#if defined (CONFIG_XNU) || defined (CONFIG_GNU_LINUX)
-	pthread_getname_np (this, thread_name, sizeof thread_name);
-#else
 	strcpy (thread_name, "thread");
+
+#if defined(__linux__)
+	if (prctl (PR_GET_NAME, (unsigned long)thread_name, 0, 0, 0) != 0)
+		strcpy (thread_name, "thread");
+#elif defined(__APPLE__)
+	pthread_getname_np ((pthread_t)this, thread_name, sizeof thread_name);
+#else
+	thread_name[sizeof (thread_name) - 1] = '\0';
 #endif
 
 	aosl_log (AOSL_LOG_EMERG, "------------[ cut here ]------------\n");

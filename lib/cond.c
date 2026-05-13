@@ -46,12 +46,8 @@ void k_cond_broadcast (k_cond_t *cond)
 	struct cond_waiter *waiter;
 
 	k_lock_lock (&cond->lock);
-#ifndef CONFIG_TOOLCHAIN_MS
-	aosl_list_for_each_entry (waiter, &cond->wait_list, list)
-#else
 	aosl_list_for_each_entry_t (struct cond_waiter, waiter, &cond->wait_list, list)
-#endif
-		aosl_hal_sem_post (waiter->event);
+	aosl_hal_sem_post (waiter->event);
 	k_lock_unlock (&cond->lock);
 }
 

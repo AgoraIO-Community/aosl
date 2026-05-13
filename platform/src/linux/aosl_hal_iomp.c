@@ -20,7 +20,7 @@ int aosl_hal_epoll_destroy(int epfd)
 	return close(epfd);
 }
 
-int aosl_hal_epoll_ctl(int epfd, aosl_epoll_op_e op, int fd, aosl_poll_event_t *ev)
+int aosl_hal_epoll_ctl(int epfd, aosl_epoll_op_e op, aosl_fd_t fd, aosl_poll_event_t *ev)
 {
 	int n_op = 0;
 	struct epoll_event n_event = {0};
@@ -157,17 +157,17 @@ void aosl_hal_fdset_zero(fd_set_t fdset)
 	FD_ZERO((fd_set *)fdset);
 }
 
-void aosl_hal_fdset_set(fd_set_t fdset, int fd)
+void aosl_hal_fdset_set(fd_set_t fdset, aosl_fd_t fd)
 {
 	FD_SET(fd, (fd_set *)fdset);
 }
 
-void aosl_hal_fdset_clr(fd_set_t fdset, int fd)
+void aosl_hal_fdset_clr(fd_set_t fdset, aosl_fd_t fd)
 {
 	FD_CLR(fd, (fd_set *)fdset);
 }
 
-int aosl_hal_fdset_isset(fd_set_t fdset, int fd)
+int aosl_hal_fdset_isset(fd_set_t fdset, aosl_fd_t fd)
 {
 	return FD_ISSET(fd, (fd_set *)fdset);
 }

@@ -25,7 +25,7 @@ int aosl_hal_epoll_destroy(int kqfd)
 	return close(kqfd);
 }
 
-int aosl_hal_epoll_ctl(int kqfd, aosl_epoll_op_e op, int fd, aosl_poll_event_t *ev)
+int aosl_hal_epoll_ctl(int kqfd, aosl_epoll_op_e op, aosl_fd_t fd, aosl_poll_event_t *ev)
 {
 	struct kevent changes[2];
 	int nchanges = 0;
@@ -165,9 +165,9 @@ int aosl_hal_poll(aosl_poll_event_t fds[], int nfds, int timeout_ms)
 fd_set_t aosl_hal_fdset_create()       { fd_set *fds = aosl_malloc(sizeof(fd_set)); return fds; }
 void aosl_hal_fdset_destroy(fd_set_t s){ if (s) aosl_free(s); }
 void aosl_hal_fdset_zero(fd_set_t s)   { FD_ZERO((fd_set *)s); }
-void aosl_hal_fdset_set(fd_set_t s, int fd)  { FD_SET(fd, (fd_set *)s); }
-void aosl_hal_fdset_clr(fd_set_t s, int fd)  { FD_CLR(fd, (fd_set *)s); }
-int  aosl_hal_fdset_isset(fd_set_t s, int fd){ return FD_ISSET(fd, (fd_set *)s); }
+void aosl_hal_fdset_set(fd_set_t s, aosl_fd_t fd)  { FD_SET(fd, (fd_set *)s); }
+void aosl_hal_fdset_clr(fd_set_t s, aosl_fd_t fd)  { FD_CLR(fd, (fd_set *)s); }
+int  aosl_hal_fdset_isset(fd_set_t s, aosl_fd_t fd){ return FD_ISSET(fd, (fd_set *)s); }
 
 int aosl_hal_select(int nfds, fd_set_t readfds, fd_set_t writefds, fd_set_t exceptfds, int timeout_ms)
 {

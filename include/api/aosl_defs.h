@@ -98,44 +98,34 @@ extern "C" {
 #define AOSL_VAR_ARGS_MAX 64
 
 
+#if defined (CONFIG_SHARED)
+// for shared
 #if defined (__GNUC__)
 #define __export_in_so__ __attribute__ ((visibility ("default")))
-#elif defined (_MSC_VER) && defined (BUILDING_API_IMPL_SOURCE) && defined (BUILD_TARGET_SHARED)
+#elif defined (_MSC_VER) && defined(AGORA_BUILDING_API)
 #define __export_in_so__ __declspec (dllexport)
-#elif defined (_MSC_VER) && !defined (BUILDING_API_IMPL_SOURCE)
+#elif defined (_MSC_VER) && !defined(AGORA_BUILDING_API)
 #define __export_in_so__ __declspec (dllimport)
 #else
 #define __export_in_so__
 #endif
+#else
+// for static
+#define __export_in_so__
+#endif
 
-#ifndef __aosl_api__
-#if defined (_MSC_VER) && defined (BUILDING_API_IMPL_SOURCE) && defined (BUILD_TARGET_SHARED)
+#if defined(CONFIG_SHARED)
+// for shared
+#if defined (_MSC_VER) && defined (AGORA_BUILDING_API)
 #define __aosl_api__ __declspec (dllexport)
-#elif defined (_MSC_VER) && !defined (BUILDING_API_IMPL_SOURCE)
+#elif defined (_MSC_VER) && !defined (AGORA_BUILDING_API)
 #define __aosl_api__ __declspec (dllimport)
 #else
 #define __aosl_api__
 #endif
-#endif
-
-#ifdef BUILDING_API_IMPL_SOURCE
-
-#if defined (__GNUC__)
-#define __so_api__ __attribute__ ((visibility ("default")))
-#elif defined (_MSC_VER)
-#define __so_api__ __declspec (dllexport)
 #else
-#define __so_api__
-#endif
-
-#else
-
-#if defined (_MSC_VER)
-#define __so_api__ __declspec (dllimport)
-#else
-#define __so_api__
-#endif
-
+// for static
+#define __aosl_api__
 #endif
 
 #if defined(__USE_GLOBAL_RODATA__)

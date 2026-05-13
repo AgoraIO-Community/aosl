@@ -49,24 +49,27 @@ static inline intptr_t IS_ERR_OR_NULL(const void *ptr)
 
 #define aosl_set_error(err) do { aosl_errno = -(err); } while (0)
 
-#define aosl_hal_set_error(err) \
-do { \
-	if (err < 0) { \
-		int newerr = 0; \
-		switch (err) { \
-			case AOSL_HAL_RET_EINTR: \
-				newerr = AOSL_EINTR; \
-				break; \
-			case AOSL_HAL_RET_EAGAIN: \
-				newerr = AOSL_EAGAIN; \
-				break; \
-			default: \
-				newerr = AOSL_EHAL; \
-				break; \
-		} \
-		aosl_set_error(-newerr); \
-	} \
-} while (0)
+static __inline__ int aosl_hal_set_error(int err)
+{
+	if (err < 0) {
+		int newerr = 0;
+		switch (err) {
+			case AOSL_HAL_RET_EINTR:
+				newerr = AOSL_EINTR;
+				break;
+			case AOSL_HAL_RET_EAGAIN:
+				newerr = AOSL_EAGAIN;
+				break;
+			default:
+				newerr = AOSL_EHAL;
+				break;
+		}
+		aosl_set_error(-newerr);
+		return -newerr;
+	}
+
+	return 0;
+}
 
 #define return_err(err) do { \
 		intptr_t ____$err = (intptr_t)(err); \

@@ -193,13 +193,13 @@ int os_poll_dispatch (struct mp_queue *q, intptr_t timeo)
 #include <api/aosl_log.h>
 #include <kernel/net.h>
 #define DEFAULT_SOCKET_PORT  12543
-static int os_socket_pipe(int pipefd[2])
+static int os_socket_pipe(aosl_fd_t pipefd[2])
 {
 	static int port = DEFAULT_SOCKET_PORT;
 	port = ((port + 1) % 100) + DEFAULT_SOCKET_PORT;
 
 	// server
-	int servfd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, 0);
+	aosl_fd_t servfd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, 0);
   if (aosl_fd_invalid(servfd)) {
     AOSL_LOG_ERR("socket error");
     return -1;
@@ -217,9 +217,9 @@ static int os_socket_pipe(int pipefd[2])
 	}
 
 	// client
-	int connfd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, 0);
+	aosl_fd_t connfd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, 0);
 	if (aosl_fd_invalid(connfd)) {
-		AOSL_LOG_ERR("socket error: %d", connfd);
+		AOSL_LOG_ERR("socket error");
 		return -1;
 	}
 	if (aosl_hal_sk_connect(connfd, (aosl_sockaddr_t*)&servaddr) < 0) {
@@ -235,7 +235,7 @@ static int os_socket_pipe(int pipefd[2])
 }
 #endif
 
-static int os_pipe(int pipefd[2], int *type)
+static int os_pipe(aosl_fd_t pipefd[2], int *type)
 {
 #if defined(__linux__) || defined(__APPLE__)
 	*type = WAKEUP_TYPE_PIPE;
@@ -253,13 +253,13 @@ static void os_fini_sigp (struct mp_queue *q)
 		os_deactivate_sigp (q);
 		q->sigp.activated = 0;
 	}
-	if (q->sigp.piper != -1) {
+	if (!aosl_fd_invalid(q->sigp.piper)) {
 		aosl_hal_sk_close (q->sigp.piper);
-		q->sigp.piper = -1;
+		q->sigp.piper = AOSL_INVALID_FD;
 	}
-	if (q->sigp.pipew != -1) {
+	if (!aosl_fd_invalid(q->sigp.pipew)) {
 		aosl_hal_sk_close (q->sigp.pipew);
-		q->sigp.pipew = -1;
+		q->sigp.pipew = AOSL_INVALID_FD;
 	}
 
 	// for event
@@ -273,7 +273,7 @@ static int os_init_sigp_pipe (struct mp_queue *q)
 {
 	// init
 	int err;
-	int fds [2];
+	aosl_fd_t fds [2];
 	int type;
 
 	err = os_pipe(fds, &type);
@@ -324,8 +324,8 @@ static int os_init_sigp (struct mp_queue *q)
 
 	// init sigp to invalid
 	q->sigp.type = WAKEUP_TYPE_NONE;
-	q->sigp.piper = -1;
-	q->sigp.pipew = -1;
+	q->sigp.piper = AOSL_INVALID_FD;
+	q->sigp.pipew = AOSL_INVALID_FD;
 	q->sigp.activated = 0;
 	q->sigp.event = NULL;
 

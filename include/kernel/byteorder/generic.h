@@ -28,7 +28,8 @@
 #elif defined(__LITTLE_ENDIAN__) || defined(_LITTLE_ENDIAN) || \
 			defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || \
 			defined(__MIPSEL__) || defined(__MIPSEL) || defined(_MIPSEL) || \
-			defined(__i386__) || defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86)
+			defined(__i386__) || defined(__x86_64__) || defined(_M_X64) || defined(_M_IX86) || \
+			defined(_M_ARM) || defined(_M_ARM64) || defined(_M_ARM64EC)
 
 		// Specific macros for little-endian architectures
 		#define COMPILE_TIME_LITTLE_ENDIAN 1

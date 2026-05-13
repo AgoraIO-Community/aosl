@@ -81,7 +81,7 @@ __export_in_so__ int aosl_setsockopt (aosl_fd_t sockfd, int level, int optname, 
 }
 #endif
 
-int aosl_get_sockaddr(int sockfd, aosl_sockaddr_t *addr)
+int aosl_get_sockaddr(aosl_fd_t sockfd, aosl_sockaddr_t *addr)
 {
 	// get port
 	aosl_sockaddr_t sock_addr = {0};
@@ -120,8 +120,7 @@ static isize_t __default_accept (aosl_fd_t fd, void *buf, size_t len, size_t ext
 
 	accept_data->newsk = aosl_hal_sk_accept (fd, &accept_data->addr.sa);
 	if (aosl_fd_invalid (accept_data->newsk)) {
-		aosl_hal_set_error((int)accept_data->newsk);
-		return -aosl_errno;
+		return aosl_hal_set_error(AOSL_HAL_RET_EHAL);
 	}
 
 	return sizeof (aosl_accept_data_t);
@@ -138,8 +137,7 @@ static isize_t __default_recv (aosl_fd_t fd, void *buf, size_t len, size_t extra
 
 	err = aosl_hal_sk_recv (fd, buf, len, flags);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return err;
 }
@@ -157,8 +155,7 @@ static isize_t __default_send (aosl_fd_t fd, const void *buf, size_t len, size_t
 
 	err = aosl_hal_sk_send (fd, buf, len, flags);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return err;
 }
@@ -178,8 +175,7 @@ static isize_t __default_recvfrom (aosl_fd_t fd, void *buf, size_t len, size_t e
 	}
 
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	return err;
@@ -205,8 +201,7 @@ static isize_t __default_sendto (aosl_fd_t fd, const void *buf, size_t len, size
 	}
 
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	return err;
@@ -222,8 +217,7 @@ static __inline__ int __do_connect (aosl_fd_t sockfd, const aosl_sockaddr_t *des
 		if (err == AOSL_HAL_RET_EINPROGRESS) {
 			return 0;
 		}
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	f = iofd_get (sockfd);
@@ -362,8 +356,7 @@ static int __this_q_listen_argv (struct mp_queue *q, aosl_fd_t fd, int backlog, 
 
 	int err = aosl_hal_sk_listen (fd, backlog);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	max_pkt_size = sizeof (aosl_accept_data_t);
@@ -652,8 +645,7 @@ static isize_t ____send (struct iofd *f, const void *buf, size_t len, int flags)
 
 	err = aosl_hal_sk_send (iofd_fobj (f)->fd, buf, len, flags);
 	if (err <= 0) {
-		aosl_hal_set_error((int)err);
-		return -aosl_errno;
+		return aosl_hal_set_error((int)err);
 	}
 
 	if ((size_t)err < len) {
@@ -742,8 +734,7 @@ static isize_t ____sendto (struct iofd *f, const void *buf, size_t len, int flag
 	}
 	err = aosl_hal_sk_sendto (iofd_fobj (f)->fd, buf, len, flags, dest_addr);
 	if (err <= 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	if ((size_t)err < len) {
@@ -860,8 +851,7 @@ __export_in_so__ int aosl_bind_port_only (aosl_fd_t sk, uint16_t af, unsigned sh
 	sk_addr.sa.sa_family = af;
 	int err = aosl_hal_sk_bind (sk, &sk_addr.sa);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return 0;
 }
@@ -874,8 +864,7 @@ __export_in_so__ int aosl_bind_device (aosl_fd_t sockfd, const char *if_name)
 	}
 	int err = aosl_hal_sk_bind_device (sockfd, if_name);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return 0;
 }

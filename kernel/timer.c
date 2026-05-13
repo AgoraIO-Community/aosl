@@ -473,18 +473,11 @@ void mpq_init_timers (struct mp_queue *q)
 void mpq_fini_timers (struct mp_queue *q)
 {
 	struct timer_node *timer;
+	struct aosl_list_head *node;
 
 	/* free the active fds */
-#ifndef CONFIG_TOOLCHAIN_MS
-	while ((timer = aosl_list_head_entry (&q->timers, struct timer_node, node)))
-#else
-	struct aosl_list_head *node;
-	while ((node = aosl_list_head (&q->timers)))
-#endif
-	{
-#ifdef CONFIG_TOOLCHAIN_MS
+	while ((node = aosl_list_head (&q->timers))) {
 		timer = aosl_list_entry (node, struct timer_node, node);
-#endif
 		__kill_timer_on_q (q, timer);
 	}
 

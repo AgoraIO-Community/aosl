@@ -110,7 +110,7 @@ __again:
 	if (err > 0) {
 		int i;
 		for (i = 0; i < maxevents; i++) {
-			events [i].fd = -1;
+			events [i].fd = AOSL_INVALID_FD;
 			events [i].events = 0;
 		}
 

@@ -29,7 +29,7 @@ void aosl_hal_fdset_zero(fd_set_t fdset)
 	FD_ZERO((fd_set *)fdset);
 }
 
-void aosl_hal_fdset_set(fd_set_t fdset, int fd)
+void aosl_hal_fdset_set(fd_set_t fdset, aosl_fd_t fd)
 {
 	if (!fdset) {
 		return;
@@ -37,7 +37,7 @@ void aosl_hal_fdset_set(fd_set_t fdset, int fd)
 	FD_SET(fd, (fd_set *)fdset);
 }
 
-void aosl_hal_fdset_clr(fd_set_t fdset, int fd)
+void aosl_hal_fdset_clr(fd_set_t fdset, aosl_fd_t fd)
 {
 	if (!fdset) {
 		return;
@@ -45,7 +45,7 @@ void aosl_hal_fdset_clr(fd_set_t fdset, int fd)
 	FD_CLR(fd, (fd_set *)fdset);
 }
 
-int aosl_hal_fdset_isset(fd_set_t fdset, int fd)
+int aosl_hal_fdset_isset(fd_set_t fdset, aosl_fd_t fd)
 {
 	if (!fdset) {
 		return 0;

@@ -4,6 +4,9 @@ file(GLOB   AOSL_PLATFORM_SRCS       "${AOSL_DIR}/platform/src/${CONFIG_PLATFORM
 list(APPEND AOSL_ADD_SOURCES          ${AOSL_PLATFORM_SRCS})
 
 ############## Add definitions ###############
+# Define AGORA_BUILDING_API to indicate that we are building the AOSL library itself
+list(APPEND AOSL_ADD_DEFINITIONS "-DAGORA_BUILDING_API")
+
 # Define AOSL config options with default values
 # Format: CONFIG_NAME=default_value
 # Can be overridden via cmake -DCONFIG_AOSL_IPV6=n etc.
@@ -88,12 +91,20 @@ if(CONFIG_AOSL_IPV6)
 endif()
 
 ############## Compile static lib ############
+if(MSVC)
+    list(APPEND AOSL_ADD_OPTIONS /wd4100 /wd4189 /wd4505)
+    list(APPEND AOSL_ADD_DEFINITIONS -D_CRT_SECURE_NO_WARNINGS)
+else()
+    list(APPEND AOSL_ADD_OPTIONS -Wno-unused-variable -Wno-unused-function)
+endif()
+
 if (AOSL_DECLARE_PROJECT)
     set(LIB_NAME "aosl")
     add_library(${LIB_NAME} STATIC ${AOSL_ADD_SOURCES})
     target_include_directories(${LIB_NAME} PRIVATE ${AOSL_ADD_INCLUDES_PRIVATE})
     target_include_directories(${LIB_NAME} PUBLIC ${AOSL_ADD_INCLUDES_PUBLIC})
-    target_compile_options(${LIB_NAME} PRIVATE ${AOSL_ADD_OPTIONS} ${AOSL_ADD_DEFINITIONS})
+    target_compile_options(${LIB_NAME} PRIVATE ${AOSL_ADD_OPTIONS})
+    target_compile_definitions(${LIB_NAME} PRIVATE ${AOSL_ADD_DEFINITIONS})
     message(STATUS "Library ${LIB_NAME} created")
 endif()
 
@@ -101,7 +112,9 @@ endif()
 if (AOSL_DECLARE_PROJECT AND AOSL_COMPILE_TEST)
     add_executable(aosl_test ${AOSL_DIR}/test/aosl_test_main.c)
     target_include_directories(aosl_test PRIVATE ${AOSL_ADD_INCLUDES_PUBLIC})
-    if(ANDROID)
+    if(WIN32)
+        target_link_libraries(aosl_test PRIVATE aosl ws2_32 iphlpapi bcrypt)
+    elseif(ANDROID)
         target_link_libraries(aosl_test PRIVATE aosl)
     elseif(APPLE)
         target_link_libraries(aosl_test PRIVATE aosl "pthread" "m")

@@ -26,8 +26,7 @@ int os_mp_init_epoll (struct mp_queue *q)
 	q->efd = aosl_hal_epoll_create();
 	if (aosl_fd_invalid (q->efd)) {
 		q->efd = AOSL_INVALID_FD;
-		aosl_hal_set_error(q->efd);
-		return -aosl_errno;
+		return aosl_hal_set_error(AOSL_HAL_RET_EHAL);
 	}
 
 	return 0;
@@ -46,8 +45,7 @@ int os_activate_sigp_epoll (struct mp_queue *q)
 	event.fd = q->sigp.piper;
 	int err = aosl_hal_epoll_ctl (q->efd, AOSL_POLL_CTL_ADD, q->sigp.piper, &event);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return 0;
 }
@@ -56,8 +54,7 @@ int os_deactivate_sigp_epoll (struct mp_queue *q)
 {
 	int err = aosl_hal_epoll_ctl (q->efd, AOSL_POLL_CTL_DEL, q->sigp.piper, NULL);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return 0;
 }
@@ -78,8 +75,7 @@ int os_add_event_fd_epoll (struct mp_queue *q, struct iofd *f)
 
 	err = aosl_hal_epoll_ctl (q->efd, AOSL_POLL_CTL_ADD, event.fd, &event);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	return err;
@@ -89,8 +85,7 @@ int os_del_event_fd_epoll (struct mp_queue *q, struct iofd *f)
 {
 	int err = aosl_hal_epoll_ctl (q->efd, AOSL_POLL_CTL_DEL, iofd_fobj (f)->fd, NULL);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	return err;

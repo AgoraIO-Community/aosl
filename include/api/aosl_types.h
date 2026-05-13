@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <string.h>
+#include <hal/aosl_hal_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,20 +27,6 @@ typedef uintptr_t usize_t;
 
 /* The proto for a general aosl object destructor function. */
 typedef void (*aosl_obj_dtor_t) (uintptr_t argc, uintptr_t argv []);
-
-typedef int aosl_fd_t;
-#define AOSL_INVALID_FD ((aosl_fd_t)-1)
-
-static __inline__ int aosl_fd_invalid (aosl_fd_t fd)
-{
-#if defined(__kspreadtrum__)
-	return (fd == AOSL_INVALID_FD);
-#else
-	return (int)(fd < 0);
-#endif
-}
-
-
 
 #ifdef __cplusplus
 }

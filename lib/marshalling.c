@@ -400,7 +400,7 @@ __CHECK_AND_ENCODE_BASETYPE (type, this_obj_addr, type, fn)
 	this_obj_addr = (uint8_t *)typed_obj_p + (uintptr_t)type->obj_addr;
 
 	if (type->is_have && !type->is_have(this_obj_addr)) {
-		goto __out;
+		goto __marshal_out;
 	}
 
 	switch (type->type_id) {
@@ -565,7 +565,7 @@ __CHECK_AND_ENCODE_BASETYPE (type, this_obj_addr, type, fn)
 		goto __err;
 	}
 
-__out:
+__marshal_out:
 	*psb_p = psb;
 	return len;
 
@@ -707,7 +707,7 @@ isize_t _____unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const a
 	this_obj_addr = (uint8_t *)typed_obj_p + (uintptr_t)type->obj_addr;
 
 	if (type->is_have && !type->is_have(this_obj_addr)) {
-		goto __out;
+		goto __unmarshal_out;
 	}
 
 	switch (type->type_id) {
@@ -967,7 +967,7 @@ isize_t _____unmarshal (const aosl_type_info_t *type, void *typed_obj_p, const a
 		goto __err;
 	}
 
-__out:
+__unmarshal_out:
 	*psb_p = psb;
 	return len;
 

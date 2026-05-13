@@ -203,39 +203,15 @@ static inline void aosl_list_splice_tail_init (struct aosl_list_head *list, stru
 	     pos != (head); \
 	     pos = n, n = pos->prev)
 
-#ifdef __GNUC__
-#define aosl_list_for_each_entry(pos, head, member)				\
-	for (pos = aosl_list_entry((head)->next, typeof(*pos), member);	\
-	     &pos->member != (head); 	\
-	     pos = aosl_list_entry(pos->member.next, typeof(*pos), member))
-#endif
-
-/* MSVC could not support typeof, so we introduced type parameter */
 #define aosl_list_for_each_entry_t(type, pos, head, member)				\
 	for (pos = aosl_list_entry((head)->next, type, member);	\
 	     &pos->member != (head); 	\
 	     pos = aosl_list_entry(pos->member.next, type, member))
 
-#ifdef __GNUC__
-#define aosl_list_for_each_entry_reverse(pos, head, member)			\
-	for (pos = aosl_list_entry((head)->prev, typeof(*pos), member);	\
-	     &pos->member != (head); 	\
-	     pos = aosl_list_entry(pos->member.prev, typeof(*pos), member))
-#endif
-
-/* MSVC could not support typeof, so we introduced type parameter */
 #define aosl_list_for_each_entry_reverse_t(type, pos, head, member)			\
 	for (pos = aosl_list_entry((head)->prev, type, member);	\
 	     &pos->member != (head); 	\
 	     pos = aosl_list_entry(pos->member.prev, type, member))
-
-#ifdef __GNUC__
-#define aosl_list_for_each_entry_safe(pos, n, head, member)			\
-	for (pos = aosl_list_entry((head)->next, typeof(*pos), member),	\
-		n = aosl_list_entry(pos->member.next, typeof(*pos), member);	\
-	     &pos->member != (head); 					\
-	     pos = n, n = aosl_list_entry(n->member.next, typeof(*n), member))
-#endif
 
 #define aosl_list_for_each_entry_safe_t(type, pos, n, head, member)			\
 	for (pos = aosl_list_entry((head)->next, type, member),	\
@@ -243,15 +219,6 @@ static inline void aosl_list_splice_tail_init (struct aosl_list_head *list, stru
 	     &pos->member != (head); 					\
 	     pos = n, n = aosl_list_entry(n->member.next, type, member))
 
-#ifdef __GNUC__
-#define aosl_list_for_each_entry_safe_reverse(pos, n, head, member)		\
-	for (pos = aosl_list_entry((head)->prev, typeof(*pos), member),	\
-		n = aosl_list_entry(pos->member.prev, typeof(*pos), member);	\
-	     &pos->member != (head); 					\
-	     pos = n, n = aosl_list_entry(n->member.prev, typeof(*n), member))
-#endif
-
-/* MSVC could not support typeof, so we introduced type parameter */
 #define aosl_list_for_each_entry_safe_reverse_t(type, pos, n, head, member)		\
 	for (pos = aosl_list_entry((head)->prev, type, member),	\
 		n = aosl_list_entry(pos->member.prev, type, member);	\

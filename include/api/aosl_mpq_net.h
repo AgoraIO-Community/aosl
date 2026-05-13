@@ -21,9 +21,6 @@
 extern "C" {
 #endif
 
-typedef aosl_fd_t aosl_sk_t;
-#define AOSL_INVALID_SK AOSL_INVALID_FD
-
 #define AOSL_IPHDR_LEN 20
 #define AOSL_UDPHDR_LEN 8
 #define AOSL_TCPHDR_LEN 20
@@ -111,7 +108,7 @@ extern __aosl_api__ int aosl_bind_device (aosl_fd_t sockfd, const char *if_name)
  * @param [out] addr    pointer to receive the socket address
  * @return              0 on success, <0 on failure
  **/
-extern __aosl_api__ int aosl_get_sockaddr(int sockfd, aosl_sockaddr_t *addr);
+extern __aosl_api__ int aosl_get_sockaddr(aosl_fd_t sockfd, aosl_sockaddr_t *addr);
 
 /**
  * @brief Initiate an async TCP connection on the current mpq.

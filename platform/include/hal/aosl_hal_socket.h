@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <hal/aosl_hal_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,18 +56,18 @@ typedef struct aosl_sockaddr {
  * @param [in] domain address/protocol family
  * @param [in] type socket type
  * @param [in] protocol socket protocol
- * @return socket file descriptor, or -1 on error
+ * @return socket file descriptor, or AOSL_INVALID_FD on error
  */
-int aosl_hal_sk_socket(enum aosl_socket_domain domain,
-                       enum aosl_socket_type type,
-                       enum aosl_socket_proto protocol);
+aosl_fd_t aosl_hal_sk_socket(enum aosl_socket_domain domain,
+                             enum aosl_socket_type type,
+                             enum aosl_socket_proto protocol);
 /**
  * @brief   bind a socket
  * @param [in] sockfd socket file descriptor
  * @param [in] addr address to bind to
  * @return 0 on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr);
+int aosl_hal_sk_bind(aosl_fd_t sockfd, const aosl_sockaddr_t* addr);
 
 /**
  * @brief   bind a socket to a specific network interface
@@ -74,7 +75,7 @@ int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr);
  * @param [in] if_name name of the network interface
  * @return 0 on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_bind_device(int sockfd, const char *if_name);
+int aosl_hal_sk_bind_device(aosl_fd_t sockfd, const char *if_name);
 
 /**
  * @brief   listen for incoming connections
@@ -82,15 +83,15 @@ int aosl_hal_sk_bind_device(int sockfd, const char *if_name);
  * @param [in] backlog maximum length of the pending connections queue
  * @return 0 on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_listen(int sockfd, int backlog);
+int aosl_hal_sk_listen(aosl_fd_t sockfd, int backlog);
 
 /**
  * @brief   accept an incoming connection
  * @param [in] sockfd socket file descriptor
  * @param [out] addr address of the connecting peer
- * @return socket file descriptor on success, < 0 on error. should use aosl_hal_errno_convert to get error code
+ * @return socket file descriptor on success, AOSL_INVALID_FD on error
  */
-int aosl_hal_sk_accept(int sockfd, aosl_sockaddr_t *addr);
+aosl_fd_t aosl_hal_sk_accept(aosl_fd_t sockfd, aosl_sockaddr_t *addr);
 
 /**
  * @brief   connect to a remote address
@@ -98,14 +99,14 @@ int aosl_hal_sk_accept(int sockfd, aosl_sockaddr_t *addr);
  * @param [in] addr address to connect to
  * @return 0 on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr);
+int aosl_hal_sk_connect(aosl_fd_t sockfd, const aosl_sockaddr_t *addr);
 
 /**
  * @brief   close a socket
  * @param [in] sockfd socket file descriptor
  * @return 0 on success, < 0 on error
  */
-int aosl_hal_sk_close(int sockfd);
+int aosl_hal_sk_close(aosl_fd_t sockfd);
 
 /**
  * @brief   send data on a socket
@@ -115,7 +116,7 @@ int aosl_hal_sk_close(int sockfd);
  * @param [in] flags flags for sending data
  * @return number of bytes sent on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_send(int sockfd, const void* buf, size_t len, int flags);
+int aosl_hal_sk_send(aosl_fd_t sockfd, const void* buf, size_t len, int flags);
 
 /**
  * @brief   receive data from a socket
@@ -125,7 +126,7 @@ int aosl_hal_sk_send(int sockfd, const void* buf, size_t len, int flags);
  * @param [in] flags flags for receiving data
  * @return number of bytes received on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_recv(int sockfd, void* buf, size_t len, int flags);
+int aosl_hal_sk_recv(aosl_fd_t sockfd, void* buf, size_t len, int flags);
 
 /**
  * @brief   send data to a specific address
@@ -136,8 +137,8 @@ int aosl_hal_sk_recv(int sockfd, void* buf, size_t len, int flags);
  * @param [in] dest_addr destination address to send data to
  * @return number of bytes sent on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_sendto(int sockfd, const void *buffer, size_t length,
-                        int flags, const aosl_sockaddr_t *dest_addr);
+int aosl_hal_sk_sendto(aosl_fd_t sockfd, const void *buffer, size_t length,
+                       int flags, const aosl_sockaddr_t *dest_addr);
 
 /**
  * @brief   receive data from a specific address
@@ -148,8 +149,8 @@ int aosl_hal_sk_sendto(int sockfd, const void *buffer, size_t length,
  * @param [out] src_addr source address of the received data
  * @return number of bytes received on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_recvfrom(int sockfd, void *buffer, size_t length,
-                          int flags, aosl_sockaddr_t *src_addr);
+int aosl_hal_sk_recvfrom(aosl_fd_t sockfd, void *buffer, size_t length,
+                         int flags, aosl_sockaddr_t *src_addr);
 
 /**
  * @brief   read data from a socket
@@ -158,7 +159,7 @@ int aosl_hal_sk_recvfrom(int sockfd, void *buffer, size_t length,
  * @param [in] count number of bytes to read
  * @return number of bytes read on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_read(int sockfd, void *buf, size_t count);
+int aosl_hal_sk_read(aosl_fd_t sockfd, void *buf, size_t count);
 
 /**
  * @brief   write data to a socket
@@ -167,14 +168,14 @@ int aosl_hal_sk_read(int sockfd, void *buf, size_t count);
  * @param [in] count number of bytes to write
  * @return number of bytes written on success, < 0 on error. should use aosl_hal_errno_convert to get error code
  */
-int aosl_hal_sk_write(int sockfd, const void *buf, size_t count);
+int aosl_hal_sk_write(aosl_fd_t sockfd, const void *buf, size_t count);
 
 /**
  * @brief   set a socket to non-blocking mode
  * @param [in] sockfd socket file descriptor
  * @return 0 on success, < 0 on error
  */
-int aosl_hal_sk_set_nonblock(int sockfd);
+int aosl_hal_sk_set_nonblock(aosl_fd_t sockfd);
 
 /**
  * @brief   get the local IP address of the default network interface
@@ -189,7 +190,7 @@ int aosl_hal_sk_get_local_ip(aosl_sockaddr_t *addr);
  * @param [out] addr pointer to aosl_sockaddr_t to store the local address
  * @return 0 on success, < 0 on error
  */
-int aosl_hal_sk_get_sockname(int sockfd, aosl_sockaddr_t *addr);
+int aosl_hal_sk_get_sockname(aosl_fd_t sockfd, aosl_sockaddr_t *addr);
 
 /**
  * @brief   resolve a hostname to IP addresses

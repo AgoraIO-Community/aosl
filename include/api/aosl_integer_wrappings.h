@@ -126,7 +126,7 @@ static __inline__ uint64_t aosl_uint64_dist (uint64_t a, uint64_t b)
 }
 
 
-#if defined (__LP64__) || defined (_WIN64)
+#if INTPTR_MAX == INT64_MAX
 #define aosl_uintptr_add(a, b) aosl_uint64_add (a, b)
 #define aosl_uintptr_sub(a, b) aosl_uint64_sub (a, b)
 #define aosl_uintptr_after(a, b) aosl_uint64_after (a, b)

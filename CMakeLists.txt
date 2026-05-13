@@ -64,7 +64,7 @@ else()
 endif()
 
 # Initialize build variables
-set(AOSL_ADD_OPTIONS -Wno-unused-variable -Wno-unused-function)
+set(AOSL_ADD_OPTIONS)
 set(AOSL_ADD_DEFINITIONS)
 set(AOSL_ADD_INCLUDES_PUBLIC)
 set(AOSL_ADD_INCLUDES_PRIVATE)

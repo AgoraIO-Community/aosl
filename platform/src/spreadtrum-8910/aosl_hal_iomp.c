@@ -24,17 +24,17 @@ void aosl_hal_fdset_zero(fd_set_t fdset)
   SCI_FD_ZERO((sci_fd_set *)fdset);
 }
 
-void aosl_hal_fdset_set(fd_set_t fdset, int fd)
+void aosl_hal_fdset_set(fd_set_t fdset, aosl_fd_t fd)
 {
   SCI_FD_SET((TCPIP_SOCKET_T)fd, (sci_fd_set *)fdset);
 }
 
-void aosl_hal_fdset_clr(fd_set_t fdset, int fd)
+void aosl_hal_fdset_clr(fd_set_t fdset, aosl_fd_t fd)
 {
   SCI_FD_CLR((TCPIP_SOCKET_T)fd, (sci_fd_set *)fdset);
 }
 
-int aosl_hal_fdset_isset(fd_set_t fdset, int fd)
+int aosl_hal_fdset_isset(fd_set_t fdset, aosl_fd_t fd)
 {
   return SCI_FD_ISSET((TCPIP_SOCKET_T)fd, (sci_fd_set *)fdset);
 }

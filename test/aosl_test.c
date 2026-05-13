@@ -358,6 +358,18 @@ static int aosl_test_hal_errno(void)
   return 0;
 }
 
+static int aosl_test_hal_fd_type(void)
+{
+#if defined(_WIN32) || defined(_WIN64)
+  CHECK(sizeof(aosl_fd_t) >= sizeof(uintptr_t));
+#else
+  CHECK(sizeof(aosl_fd_t) == sizeof(int));
+#endif
+  CHECK(aosl_fd_invalid(AOSL_INVALID_FD));
+  LOG_FMT("test success");
+  return 0;
+}
+
 static int aosl_test_hal_file(void)
 {
   // ignore
@@ -365,7 +377,7 @@ static int aosl_test_hal_file(void)
 }
 
 #if defined(AOSL_HAL_HAVE_EPOLL) && (AOSL_HAL_HAVE_EPOLL == 1)
-static int aosl_test_hal_iomp_epoll(int server_fd, int client_fd, const aosl_sockaddr_t *server_addr)
+static int aosl_test_hal_iomp_epoll(aosl_fd_t server_fd, aosl_fd_t client_fd, const aosl_sockaddr_t *server_addr)
 {
   int ret;
   aosl_poll_event_t event = {0};
@@ -423,7 +435,7 @@ __tag_out:
 #endif
 
 #if defined(AOSL_HAL_HAVE_POLL) && (AOSL_HAL_HAVE_POLL == 1)
-static int aosl_test_hal_iomp_poll(int server_fd, int client_fd, const aosl_sockaddr_t *server_addr)
+static int aosl_test_hal_iomp_poll(aosl_fd_t server_fd, aosl_fd_t client_fd, const aosl_sockaddr_t *server_addr)
 {
   int ret;
   aosl_poll_event_t event = {0};
@@ -472,7 +484,7 @@ __tag_out:
 #endif
 
 #if defined(AOSL_HAL_HAVE_SELECT) && (AOSL_HAL_HAVE_SELECT == 1)
-static int aosl_test_hal_iomp_select(int server_fd, int client_fd, const aosl_sockaddr_t *server_addr)
+static int aosl_test_hal_iomp_select(aosl_fd_t server_fd, aosl_fd_t client_fd, const aosl_sockaddr_t *server_addr)
 {
   int ret;
   char snd_buf[100] = {0};
@@ -524,13 +536,13 @@ __tag_out:
 static int aosl_test_hal_iomp(void)
 {
   int ret;
-  int client_fd = -1;
-  int server_fd = -1;
+  aosl_fd_t client_fd = AOSL_INVALID_FD;
+  aosl_fd_t server_fd = AOSL_INVALID_FD;
 
   // server
   server_fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
-  if (server_fd < 0) {
-    LOG_FMT("get server socket failed, fd=%d", server_fd);
+  if (aosl_fd_invalid(server_fd)) {
+    LOG_FMT("get server socket failed");
     return -1;
   }
 
@@ -551,8 +563,8 @@ static int aosl_test_hal_iomp(void)
 
   // client
   client_fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
-  if (client_fd < 0) {
-    LOG_FMT("get client socket failed, fd=%d", client_fd);
+  if (aosl_fd_invalid(client_fd)) {
+    LOG_FMT("get client socket failed");
     ret = -1;
     goto __tag_out;
   }
@@ -570,10 +582,10 @@ static int aosl_test_hal_iomp(void)
 #endif
 
 __tag_out:
-  if (server_fd >= 0) {
+  if (!aosl_fd_invalid(server_fd)) {
     aosl_hal_sk_close(server_fd);
   }
-  if (client_fd >= 0) {
+  if (!aosl_fd_invalid(client_fd)) {
     aosl_hal_sk_close(client_fd);
   }
 
@@ -592,7 +604,7 @@ static int aosl_test_hal_socket_trans_udp(char *server_ip)
   addr.sa_port = aosl_htons(53);
   aosl_inet_addr_from_string(&addr.sin_addr, dns_server);
 
-  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
+  aosl_fd_t fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
   if (aosl_fd_invalid(fd)) {
     LOG_FMT("create socket failed, fd=%d", fd);
     return -1;
@@ -714,7 +726,7 @@ static int aosl_test_hal_socket_trans_tcp(char *server_ip)
   addr.sa_port = aosl_htons(80);
   aosl_inet_addr_from_string(&addr.sin_addr, server_ip);
 
-  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
+  aosl_fd_t fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
   if (aosl_fd_invalid(fd)) {
     LOG_FMT("create tcp socket failed, fd=%d", fd);
     return -1;
@@ -807,12 +819,12 @@ static int aosl_test_hal_socket_trans(void)
 
 static int aosl_test_hal_socket_maxcnt(void)
 {
-  int fds[20];
+  aosl_fd_t fds[20];
   int cnt = 0;
 
   for (;;) {
-    int fd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
-    if (fd < 0) {
+    aosl_fd_t fd = aosl_hal_sk_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
+    if (aosl_fd_invalid(fd)) {
       break;
     }
 
@@ -1998,6 +2010,7 @@ static int aosl_test_hal_utils(void)
 
 static int aosl_test_hal(void)
 {
+  CHECK(aosl_test_hal_fd_type() == 0);
   CHECK(aosl_test_hal_atomic() == 0);
   CHECK(aosl_test_hal_errno() == 0);
   CHECK(aosl_test_hal_file() == 0);
@@ -2011,12 +2024,12 @@ static int aosl_test_hal(void)
 }
 
 struct test_mpq_server_res {
-  int sk;
+  aosl_fd_t sk;
   int recv_cnt;
 };
 
 struct test_mpq_client_res {
-  int sk;
+  aosl_fd_t sk;
   int sent_cnt;
   aosl_sockaddr_t server_addr;
 };
@@ -2071,7 +2084,7 @@ static int test_mpq_udp_server_init(void *arg)
   int ret;
   mpq_server_res.recv_cnt = 0;
   mpq_server_res.sk = -1;
-  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
+  aosl_fd_t fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
   CHECK(!aosl_fd_invalid(fd));
 
   aosl_sockaddr_t addr = { 0 };
@@ -2098,7 +2111,7 @@ static int test_mpq_udp_client_init(void *arg)
   int ret;
   mpq_client_res.sent_cnt = 0;
   mpq_client_res.sk = -1;
-  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
+  aosl_fd_t fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_DGRAM, AOSL_IPPROTO_UDP);
   CHECK(!aosl_fd_invalid(fd));
 
   aosl_sockaddr_t addr = { 0 };
@@ -2291,7 +2304,7 @@ static int test_mpq_tcp_server_init(void *arg)
   mpq_server_res.sk = -1;
   
   // Create TCP listen socket
-  int listen_fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
+  aosl_fd_t listen_fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
   CHECK(!aosl_fd_invalid(listen_fd));
 
   aosl_sockaddr_t addr = { 0 };
@@ -2325,7 +2338,7 @@ static int test_mpq_tcp_client_init(void *arg)
   mpq_client_res.sk = -1;
   
   // Create TCP socket
-  int fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
+  aosl_fd_t fd = aosl_socket(AOSL_AF_INET, AOSL_SOCK_STREAM, AOSL_IPPROTO_TCP);
   CHECK(!aosl_fd_invalid(fd));
 
   aosl_sockaddr_t addr = { 0 };

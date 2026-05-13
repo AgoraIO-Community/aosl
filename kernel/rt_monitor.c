@@ -495,12 +495,12 @@ static int __create_and_attach_af_netlink (aosl_net_ev_func_t f, void *arg)
 		return 0;
 	}
 
-__out:
+__tag_out:
 	return -1;
 
 __close_sk:
 	close (sk);
-	goto __out;
+	goto __tag_out;
 }
 
 static void __on_af_netlink_event (int fd, int event, uintptr_t argc, uintptr_t argv [])

@@ -1,7 +1,7 @@
 /***************************************************************************
  * Module:	AOSL Red-Black tree header file
  *
- * Copyright © 2025 Agora
+ * Copyright (c) 2025 Agora
  * This file is part of AOSL, an open source project.
  * Licensed under the Apache License, Version 2.0, with certain conditions.
  * Refer to the "LICENSE" file in the root directory for more information.
@@ -129,7 +129,7 @@ typedef int (*aosl_rb_walk_func_t) (struct aosl_rb_node *node, void *arg);
 extern __aosl_api__ void aosl_rb_traverse_dlr (struct aosl_rb_root *root, aosl_rb_walk_func_t func, void *arg);
 
 /**
- * @brief Traverse the tree in in-order (left, root, right) — sorted order.
+ * @brief Traverse the tree in in-order (left, root, right) in sorted order.
  * @param [in] root  the tree root
  * @param [in] func  callback invoked for each node; return non-zero to stop
  * @param [in] arg   user argument passed to the callback

@@ -45,8 +45,7 @@ int make_fd_nb_clex (aosl_fd_t fd)
 {
 	int err = aosl_hal_sk_set_nonblock (fd);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	return 0;
@@ -255,8 +254,7 @@ static isize_t __default_read (aosl_fd_t fd, void *buf, size_t len, size_t extra
 	UNUSED (argv);
 	err = aosl_hal_sk_read (fd, buf, len);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return err;
 }
@@ -269,8 +267,7 @@ static isize_t __default_write (aosl_fd_t fd, const void *buf, size_t len, size_
 	UNUSED (argv);
 	err = aosl_hal_sk_write (fd, buf, len);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 	return err;
 }
@@ -546,10 +543,9 @@ int __mpq_del_fd (struct mp_queue *q, aosl_fd_t fd)
 
 static int ____close (aosl_fd_t fd)
 {
-	int err = aosl_hal_sk_close ((int)fd);
+	int err = aosl_hal_sk_close (fd);
 	if (err < 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	return err;
@@ -602,18 +598,11 @@ void f_event_and_close (struct mp_queue *q, struct iofd *f, int iofd_err)
 void mpq_fini_iofds (struct mp_queue *q)
 {
 	struct iofd *f;
+	struct aosl_list_head *node;
 
 	/* free the active fds */
-#ifndef CONFIG_TOOLCHAIN_MS
-	while ((f = aosl_list_head_entry (&q->iofds, struct iofd, node)))
-#else
-	struct aosl_list_head *node;
-	while ((node = aosl_list_head (&q->iofds)))
-#endif
-	{
-#ifdef CONFIG_TOOLCHAIN_MS
+	while ((node = aosl_list_head (&q->iofds))) {
 		f = aosl_list_entry (node, struct iofd, node);
-#endif
 		__this_q_close_f (q, f);
 	}
 
@@ -745,8 +734,7 @@ static isize_t ____write (struct iofd *f, const void *buf, size_t len)
 	f->flags |= AOSL_POLLOUT;
 
 	if (err <= 0) {
-		aosl_hal_set_error(err);
-		return -aosl_errno;
+		return aosl_hal_set_error(err);
 	}
 
 	if ((size_t)err < len) {

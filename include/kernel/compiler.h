@@ -18,7 +18,12 @@
 #endif
 
 #ifndef FuncReturnAddress
+#if defined(_MSC_VER)
+#include <intrin.h>
+#define FuncReturnAddress() _ReturnAddress()
+#else
 #define FuncReturnAddress() __builtin_return_address(0)
+#endif
 #endif
 
 #endif /* __KERNEL_COMPILER_H__ */

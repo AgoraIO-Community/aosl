@@ -107,8 +107,8 @@ typedef enum wakeup_type {
 
 struct wakeup_signal {
 	wakeup_type_e type;
-	int piper;           // pipe or socket for read
-	int pipew;           // pipe or socket for write
+	aosl_fd_t piper;     // pipe or socket for read
+	aosl_fd_t pipew;     // pipe or socket for write
 	int activated;       // whether actived
 	aosl_event_t  event; // event for signal
 };

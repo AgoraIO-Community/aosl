@@ -104,14 +104,17 @@ static void conv_addr_to_aosl(const struct sci_sockaddr *sci_addr, aosl_sockaddr
   }
 }
 
-int aosl_hal_sk_socket(enum aosl_socket_domain domain,
-                       enum aosl_socket_type type,
-                       enum aosl_socket_proto protocol)
+aosl_fd_t aosl_hal_sk_socket(enum aosl_socket_domain domain,
+											 enum aosl_socket_type type,
+											 enum aosl_socket_proto protocol)
 {
   int sci_domain = conv_domain_to_sci(domain);
   int sci_type = conv_type_to_sci(type);
   int fd = sci_sock_socket(sci_domain, sci_type, 0, get_spreadtrun_net_id());
-  return fd;
+  if (fd < 0) {
+    return AOSL_INVALID_FD;
+  }
+  return (aosl_fd_t)fd;
 }
 
 int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr)
@@ -138,16 +141,17 @@ int aosl_hal_sk_listen(int sockfd, int backlog)
   return 0;
 }
 
-int aosl_hal_sk_accept(int sockfd, aosl_sockaddr_t *addr)
+aosl_fd_t aosl_hal_sk_accept(aosl_fd_t sockfd, aosl_sockaddr_t *addr)
 {
   struct sci_sockaddr sci_addr = {0};
   int ret = sci_sock_accept(sockfd, &sci_addr, 0);
   if (ret < 0) {
-    ret = aosl_hal_errno_convert(sci_sock_errno(sockfd));
+    (void)aosl_hal_errno_convert(sci_sock_errno(sockfd));
+    return AOSL_INVALID_FD;
   } else {
     conv_addr_to_aosl(&sci_addr, addr);
   }
-  return ret;
+  return (aosl_fd_t)ret;
 }
 
 int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr)

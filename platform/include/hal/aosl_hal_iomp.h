@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <hal/aosl_hal_config.h>
 #include <hal/aosl_hal_errno.h>
+#include <hal/aosl_hal_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +43,7 @@ typedef enum {
  * @brief poll event structure
  */
 typedef struct {
-	int fd;
+	aosl_fd_t fd;
 	uint32_t events;
 	uint32_t revents; // only for poll
 } aosl_poll_event_t;
@@ -73,7 +74,7 @@ int aosl_hal_epoll_destroy(int epfd);
  * @param [out] ev  event lists
  * @return 0 on success, or -1 on error
  */
-int aosl_hal_epoll_ctl(int epfd, aosl_epoll_op_e op, int fd, aosl_poll_event_t *ev);
+int aosl_hal_epoll_ctl(int epfd, aosl_epoll_op_e op, aosl_fd_t fd, aosl_poll_event_t *ev);
 
 /**
  * @brief wait for events on epoll instance
@@ -121,14 +122,14 @@ void aosl_hal_fdset_zero(fd_set_t fdset);
  * @param [in/out] fdset fd set handle
  * @param [in] fd  file descriptor to be set
  */
-void aosl_hal_fdset_set(fd_set_t fdset, int fd);
+void aosl_hal_fdset_set(fd_set_t fdset, aosl_fd_t fd);
 
 /**
  * @brief clear fd in fd_set
  * @param [in/out] fdset fd set handle
  * @param [in] fd  file descriptor to be cleared
  */
-void aosl_hal_fdset_clr(fd_set_t fdset, int fd);
+void aosl_hal_fdset_clr(fd_set_t fdset, aosl_fd_t fd);
 
 /**
  * @brief check if fd is set in fd_set
@@ -136,7 +137,7 @@ void aosl_hal_fdset_clr(fd_set_t fdset, int fd);
  * @param [in] fd  file descriptor to be checked
  * @return non-zero if fd is set, otherwise zero
  */
-int aosl_hal_fdset_isset(fd_set_t fdset, int fd);
+int aosl_hal_fdset_isset(fd_set_t fdset, aosl_fd_t fd);
 
 /**
  * @brief select function

@@ -1,7 +1,7 @@
 /***************************************************************************
  * Module:	file hal definitions.
  *
- * Copyright © 2025 Agora
+ * Copyright (c) 2025 Agora
  * This file is part of AOSL, an open source project.
  * Licensed under the Apache License, Version 2.0, with certain conditions.
  * Refer to the "LICENSE" file in the root directory for more information.
@@ -35,14 +35,14 @@ int aosl_hal_rmdir(const char *path);
 /**
  * @brief check file exist
  * @param [in] path file path
- * @return 0: not exist；non-zero：exist
+ * @return 0: not exist, non-zero: exist
  */
 int aosl_hal_fexist(const char *path);
 
 /**
  * @brief get file size
  * @param [in] path file path
- * @return >=0: file size；<0: failed
+ * @return >=0: file size, <0: failed
  */
 int aosl_hal_fsize(const char *path);
 
@@ -64,7 +64,7 @@ int aosl_hal_file_delete(const char *filepath);
  * @brief rename file
  * @param [in] old_name old file name
  * @param [in] new_name new file name
- * @return 0: success；< 0: failed
+ * @return 0: success, < 0: failed
  */
 int aosl_hal_file_rename(const char *old_name, const char *new_name);
 
@@ -79,7 +79,7 @@ aosl_fs_t aosl_hal_fopen(const char *filepath, const char *mode);
 /**
  * @brief close file
  * @param fs file stream handle
- * @return 0: success；< 0: failed
+ * @return 0: success, < 0: failed
  */
 int aosl_hal_fclose(aosl_fs_t fs);
 
