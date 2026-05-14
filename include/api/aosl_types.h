@@ -14,7 +14,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <inttypes.h>
 #include <string.h>
 #include <hal/aosl_hal_types.h>
 
