@@ -29,6 +29,9 @@ typedef int aosl_timer_t;
 /** @brief Check if a timer id is invalid. */
 #define aosl_mpq_timer_invalid(timer_id) (((int16_t)(timer_id)) < 0)
 
+/* The proto for a timer argument destructor function. */
+typedef void (*aosl_obj_dtor_t) (uintptr_t argc, uintptr_t argv []);
+
 /* The proto for a timer-callback function. */
 typedef void (*aosl_timer_func_t) (aosl_timer_t timer_id, const aosl_ts_t *now_p, uintptr_t argc, uintptr_t argv []);
 

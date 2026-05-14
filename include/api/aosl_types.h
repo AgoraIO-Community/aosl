@@ -23,10 +23,6 @@ extern "C" {
 #endif
 
 typedef intptr_t isize_t;
-typedef uintptr_t usize_t;
-
-/* The proto for a general aosl object destructor function. */
-typedef void (*aosl_obj_dtor_t) (uintptr_t argc, uintptr_t argv []);
 
 #ifdef __cplusplus
 }
