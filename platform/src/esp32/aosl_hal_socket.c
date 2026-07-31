@@ -169,13 +169,7 @@ int aosl_hal_sk_set_dscp(aosl_fd_t sockfd, enum aosl_socket_domain domain, uint8
 		optname = IP_TOS;
 		break;
 	case AOSL_AF_INET6:
-#if LWIP_IPV6
-		level = IPPROTO_IPV6;
-		optname = IPV6_TCLASS;
-		break;
-#else
 		return AOSL_HAL_RET_EHAL;
-#endif
 	default:
 		return AOSL_HAL_RET_EHAL;
 	}
