@@ -1852,21 +1852,50 @@ extern void k_mpqp_fini (void);
 extern void k_route_init (void);
 extern void k_route_fini (void);
 
-// 0: no init
-// 1: init ing
-// 2: init done
-static atomic_t s_aosl_init_step = 0;
+/*
+ * aosl_ctor()/aosl_dtor() form a process-wide ownership pair.  Keep the
+ * ownership count separate from the initialization state so that independent
+ * users of the library can hold their own reference to the shared runtime.
+ * The lock is intentionally backed only by the HAL atomic primitive: the
+ * normal AOSL locks are not available until the first initialization finishes.
+ */
+static atomic_t s_aosl_init_refcount = 0;
+static atomic_t s_aosl_lifecycle_lock = 0;
+
+static void aosl_lifecycle_lock (void)
+{
+	while (atomic_cmpxchg (&s_aosl_lifecycle_lock, 0, 1) != 0) {
+		/* Avoid busy-waiting while another thread initializes or finalizes. */
+		aosl_msleep (5);
+	}
+}
+
+static void aosl_lifecycle_unlock (void)
+{
+	/* The atomic store provides the required release barrier. */
+	atomic_set (&s_aosl_lifecycle_lock, 0);
+}
 
 __export_in_so__ void aosl_dtor (void)
 {
-	if (!atomic_read(&s_aosl_init_step)) {
+	aosl_lifecycle_lock ();
+
+	/* Make unmatched dtor calls harmless, just like releasing an empty ref. */
+	if (atomic_read (&s_aosl_init_refcount) == 0) {
+		aosl_lifecycle_unlock ();
+		return;
+	}
+
+	if (atomic_dec_return (&s_aosl_init_refcount) > 0) {
+		/* Other users still own the runtime. */
+		aosl_lifecycle_unlock ();
 		return;
 	}
 
 	if (THIS_MPQ () != NULL) {
 		/**
-		 * We do not allow any thread created by aosl to unload
-		 * the aosl library, if so, this should be a fatal bug!
+		 * We do not allow the last owner, running on a thread created by
+		 * AOSL, to unload the library; if so, this is a fatal bug.
 		 **/
 		abort ();
 	}
@@ -1882,16 +1911,19 @@ __export_in_so__ void aosl_dtor (void)
 	os_thread_fini ();
 	k_mm_fini ();
 
-	atomic_set(&s_aosl_init_step, 0);
+	aosl_lifecycle_unlock ();
 }
 
 __export_in_so__ void aosl_ctor (void)
 {
-	if (atomic_read(&s_aosl_init_step)) {
+	aosl_lifecycle_lock ();
+
+	/* The runtime is already initialized; acquire another shared reference. */
+	if (atomic_read (&s_aosl_init_refcount) > 0) {
+		atomic_inc (&s_aosl_init_refcount);
+		aosl_lifecycle_unlock ();
 		return;
 	}
-
-	atomic_set(&s_aosl_init_step, 1);
 
 	k_mm_init ();
 	os_thread_init ();
@@ -1904,5 +1936,6 @@ __export_in_so__ void aosl_ctor (void)
 	k_mpqp_init ();
 	k_route_init ();
 
-	atomic_set(&s_aosl_init_step, 2);
+	atomic_set (&s_aosl_init_refcount, 1);
+	aosl_lifecycle_unlock ();
 }
