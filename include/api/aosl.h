@@ -32,13 +32,17 @@ extern "C" {
 #endif
 
 /**
- * Initialize the AOSL library. Must be called before using any AOSL API.
+ * Acquire a reference to the process-wide AOSL runtime. Each successful call
+ * must be paired with one aosl_dtor() call. The runtime is initialized on the
+ * first call and remains available until the last matching reference is
+ * released.
  **/
 extern __aosl_api__ void aosl_ctor (void);
 
 /**
- * Finalize the AOSL library and release all resources.
- * Must be called when AOSL is no longer needed.
+ * Release one reference to the process-wide AOSL runtime. Global resources are
+ * finalized only when the matching reference count reaches zero; extra calls
+ * when no reference is held are ignored.
  **/
 extern __aosl_api__ void aosl_dtor (void);
 
