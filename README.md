@@ -2,6 +2,8 @@
 The aosl library provides an abstract implementation of low-level common components including threads, IO, logging, memory, etc.
 The API header file path for aosl: include/api
 
+![AOSL architecture](docs/images/aosl-architecture.png)
+
 # 2. Porting Guide
 # 2.1 HAL Layer Definition
 When porting to a chip platform, you only need to focus on the platform directory, where:  
