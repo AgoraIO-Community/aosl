@@ -79,12 +79,14 @@ list(APPEND AOSL_ADD_SOURCES
     "${AOSL_DIR}/net/sk_utils.c"
     "${AOSL_DIR}/net/inet.c"
     "${AOSL_DIR}/net/dns.c"
-
-    "${AOSL_DIR}/test/aosl_test.c"
 )
 
 if(CONFIG_AOSL_IPV6)
     list(APPEND AOSL_ADD_SOURCES "${AOSL_DIR}/net/ipv6.c")
+endif()
+
+if(AOSL_WITHIN_TEST)
+    list(APPEND AOSL_ADD_SOURCES "${AOSL_DIR}/test/aosl_test.c")
 endif()
 
 ############## Compile static lib ############
@@ -110,7 +112,12 @@ endif()
 
 ############## Compile test bin ############
 if (AOSL_DECLARE_PROJECT AND AOSL_COMPILE_TEST)
-    add_executable(aosl_test ${AOSL_DIR}/test/aosl_test_main.c)
+    set(AOSL_TEST_SOURCES "${AOSL_DIR}/test/aosl_test_main.c")
+    # Compile the implementation here when it is not already part of libaosl.
+    if(NOT AOSL_WITHIN_TEST)
+        list(APPEND AOSL_TEST_SOURCES "${AOSL_DIR}/test/aosl_test.c")
+    endif()
+    add_executable(aosl_test ${AOSL_TEST_SOURCES})
     target_include_directories(aosl_test PRIVATE ${AOSL_ADD_INCLUDES_PUBLIC})
     if(WIN32)
         target_link_libraries(aosl_test PRIVATE aosl ws2_32 iphlpapi bcrypt)
@@ -121,7 +128,23 @@ if (AOSL_DECLARE_PROJECT AND AOSL_COMPILE_TEST)
     else()
         target_link_libraries(aosl_test PRIVATE aosl "pthread" "dl" "rt" "m")
     endif()
-    message(STATUS "aosl_test created")
+
+    if(CMAKE_STRIP)
+        set(AOSL_TEST_STRIPED_OUTPUT
+            "${CMAKE_BINARY_DIR}/aosl_test-striped")
+        add_custom_command(OUTPUT ${AOSL_TEST_STRIPED_OUTPUT}
+            COMMAND ${CMAKE_COMMAND} -E copy
+                $<TARGET_FILE:aosl_test> ${AOSL_TEST_STRIPED_OUTPUT}
+            COMMAND ${CMAKE_STRIP} ${AOSL_TEST_STRIPED_OUTPUT}
+            DEPENDS aosl_test
+            COMMENT "Stripping aosl_test -> aosl_test-striped"
+            VERBATIM
+        )
+        add_custom_target(aosl_test_striped ALL DEPENDS ${AOSL_TEST_STRIPED_OUTPUT})
+        message(STATUS "aosl_test and aosl_test-striped created")
+    else()
+        message(STATUS "aosl_test created (CMAKE_STRIP is not configured)")
+    endif()
 endif()
 
 ############## Copy include file ############
