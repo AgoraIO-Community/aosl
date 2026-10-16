@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <ipro_osal.h>
 #include <FreeRTOS_POSIX.h>
-#include <pthread.h>
+#include <FreeRTOS_POSIX/pthread.h>
 #include <time.h>
 #include <semphr.h>
 
