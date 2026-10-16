@@ -48,7 +48,8 @@ int aosl_hal_get_uuid(char buf[], int buf_sz)
 	/* get soft random value */
 	r2 = (uint32_t)rand();
 
-	snprintf (buf, buf_sz, "%08x%08x%08x%08x", m, tick, r1, r2);
+	snprintf (buf, buf_sz, "%08x%08x%08x%08x", (unsigned int)m, (unsigned int)tick,
+	          (unsigned int)r1, (unsigned int)r2);
 	return 0;
 }
 

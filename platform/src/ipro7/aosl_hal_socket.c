@@ -7,59 +7,6 @@
 #include <api/aosl_route.h>
 #include <api/aosl_log.h>
 
-/* Helper function to detect and get local IP address for 127.0.0.1 translation */
-static int get_local_ip_for_loopback(uint32_t *local_ip)
-{
-  static uint32_t cached_local_ip = 0;
-  
-  /* Return cached IP if already detected */
-  if (cached_local_ip != 0) {
-    *local_ip = cached_local_ip;
-    return 0;
-  }
-  
-  /* Create a dummy UDP socket to detect local IP */
-  int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-  if (sock < 0) {
-    aosl_log(AOSL_LOG_WARNING, "[AOSL_HAL] get_local_ip: failed to create socket");
-    return -1;
-  }
-  
-  /* Connect to external IP (doesn't send data, just selects route) */
-  struct sockaddr_in dummy_addr = {0};
-  dummy_addr.sin_family = AF_INET;
-  dummy_addr.sin_port = htons(53); /* DNS port */
-  dummy_addr.sin_addr.s_addr = htonl(0x08080808); /* 8.8.8.8 */
-  
-  if (connect(sock, (struct sockaddr *)&dummy_addr, sizeof(dummy_addr)) < 0) {
-    close(sock);
-    aosl_log(AOSL_LOG_WARNING, "[AOSL_HAL] get_local_ip: connect failed, errno=%d", errno);
-    return -1;
-  }
-  
-  /* Get the local address selected by the kernel */
-  struct sockaddr_in local_addr = {0};
-  socklen_t addr_len = sizeof(local_addr);
-  if (getsockname(sock, (struct sockaddr *)&local_addr, &addr_len) < 0) {
-    close(sock);
-    aosl_log(AOSL_LOG_WARNING, "[AOSL_HAL] get_local_ip: getsockname failed, errno=%d", errno);
-    return -1;
-  }
-  
-  close(sock);
-  
-  /* Cache the result */
-  cached_local_ip = local_addr.sin_addr.s_addr;
-  *local_ip = cached_local_ip;
-  
-  unsigned int ip = ntohl(cached_local_ip);
-  aosl_log(AOSL_LOG_INFO, "[AOSL_HAL] Detected local IP: %u.%u.%u.%u (cached for loopback translation)",
-           (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
-           (ip >> 8) & 0xFF, ip & 0xFF);
-  
-  return 0;
-}
-
 static int conv_domain_to_os(enum aosl_socket_domain domain)
 {
   switch (domain) {
@@ -113,8 +60,6 @@ static int conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockaddr *os_a
       v4->sin_family = AF_INET;
       v4->sin_port = ah_addr->sa_port;
       v4->sin_addr.s_addr = ah_addr->sin_addr;
-      aosl_log(AOSL_LOG_DEBUG, "[AOSL_HAL] conv_addr_to_os: IPv4 addr=0x%08x port=%d", 
-               (unsigned int)ah_addr->sin_addr, ntohs(ah_addr->sa_port));
       break;
     }
     case AOSL_AF_INET6: {
@@ -125,7 +70,6 @@ static int conv_addr_to_os(const aosl_sockaddr_t *ah_addr, struct sockaddr *os_a
       v6->sin6_flowinfo = ah_addr->sin6_flowinfo;
       v6->sin6_scope_id = ah_addr->sin6_scope_id;
       memcpy(&v6->sin6_addr, &ah_addr->sin6_addr, 16);
-      aosl_log(AOSL_LOG_DEBUG, "[AOSL_HAL] conv_addr_to_os: IPv6 port=%d", ntohs(ah_addr->sa_port));
 #else
       aosl_log(AOSL_LOG_ERROR, "[AOSL_HAL] conv_addr_to_os: IPv6 not supported");
       return -1;
@@ -159,10 +103,6 @@ static inline int translate_loopback_addr(struct sockaddr *os_addr, bool for_bin
     if (for_bind) {
       /* For bind operations, use INADDR_ANY (0.0.0.0) to accept on all interfaces */
       v4->sin_addr.s_addr = htonl(INADDR_ANY);
-      aosl_log(AOSL_LOG_INFO, "[AOSL_HAL] translate_loopback: 127.x.x.x → 0.0.0.0 (INADDR_ANY) for bind");
-    } else {
-      /* For connect/sendto, keep 127.0.0.1 - lwIP should handle loopback */
-      aosl_log(AOSL_LOG_INFO, "[AOSL_HAL] translate_loopback: keeping 127.0.0.1 for send/connect (lwIP loopback)");
     }
   }
   
@@ -263,16 +203,6 @@ int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr)
     return AOSL_HAL_RET_FAILURE;
   }
   
-  // Log bind operation for debugging
-  if (addr->sa_family == AOSL_AF_INET) {
-    unsigned int ip = ntohl(addr->sin_addr);
-    aosl_log(AOSL_LOG_INFO, "[AOSL_HAL] aosl_hal_sk_bind: fd=%d binding to %u.%u.%u.%u:%u", 
-             sockfd,
-             (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, 
-             (ip >> 8) & 0xFF, ip & 0xFF,
-             ntohs(addr->sa_port));
-  }
-  
   int ret = bind(sockfd, n_addr, addrlen);
   if (ret < 0) {
     int orig_errno = errno;
@@ -281,7 +211,6 @@ int aosl_hal_sk_bind(int sockfd, const aosl_sockaddr_t* addr)
     return ret;
   }
   
-  aosl_log(AOSL_LOG_DEBUG, "[AOSL_HAL] aosl_hal_sk_bind: bind successful, fd=%d", sockfd);
   return 0;
 }
 
@@ -382,16 +311,6 @@ int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr)
     return AOSL_HAL_RET_FAILURE;
   }
   
-  // Log connect operation for debugging
-  if (addr->sa_family == AOSL_AF_INET) {
-    unsigned int ip = ntohl(addr->sin_addr);
-    aosl_log(AOSL_LOG_INFO, "[AOSL_HAL] aosl_hal_sk_connect: fd=%d connecting to %u.%u.%u.%u:%u", 
-             sockfd,
-             (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, 
-             (ip >> 8) & 0xFF, ip & 0xFF,
-             ntohs(addr->sa_port));
-  }
-  
   int ret = connect(sockfd, n_addr, addrlen);
   if (ret < 0) {
     int orig_errno = errno;
@@ -402,7 +321,6 @@ int aosl_hal_sk_connect(int sockfd, const aosl_sockaddr_t *addr)
     return ret;
   }
   
-  aosl_log(AOSL_LOG_DEBUG, "[AOSL_HAL] aosl_hal_sk_connect: connect successful, fd=%d", sockfd);
   return 0;
 }
 

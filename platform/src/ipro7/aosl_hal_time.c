@@ -31,7 +31,7 @@ int aosl_hal_get_time_str(char *buf, int len)
   if (gettimeofday(&tv, NULL) < 0) {
     // Fallback to tick milliseconds if real-time clock not available
     uint32_t now_ms = ipro_osal_get_time_ms();
-    snprintf(buf, len, "%u", now_ms);
+    snprintf(buf, len, "%u", (unsigned int)now_ms);
     return 0;
   }
 
@@ -47,7 +47,7 @@ int aosl_hal_get_time_str(char *buf, int len)
   strftime(time_str, sizeof(time_str), "%F %T", &time_tm);
   
   // Append milliseconds: .xxx
-  snprintf(time_str + 19, 5, ".%03u", (uint32_t)(tv.tv_usec / 1000));
+  snprintf(time_str + 19, 5, ".%03u", (unsigned int)(tv.tv_usec / 1000));
   
   snprintf(buf, len, "%s", time_str);
   return 0;
